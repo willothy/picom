@@ -817,7 +817,7 @@ bool gl_init(struct gl_data *gd, session_t *ps) {
 	glGenQueries(2, gd->frame_timing);
 	gd->current_frame_timing = 0;
 
-	// Initialize GLX data structure
+	// Initialize GL data structure
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 
