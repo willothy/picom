@@ -570,8 +570,9 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
 		case 290:
 			// --backend
 			opt->backend = parse_backend(optarg);
-			if (opt->backend >= NUM_BKEND)
+			if (opt->backend >= NUM_BKEND) {
 				exit(1);
+			}
 			break;
 		P_CASEBOOL(291, glx_no_stencil);
 		P_CASEINT(293, benchmark);
@@ -631,8 +632,9 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
 			break;
 		case 304:
 			// --opacity-rule
-			if (!parse_numeric_window_rule(&opt->opacity_rules, optarg, 0, 100))
+			if (!parse_numeric_window_rule(&opt->opacity_rules, optarg, 0, 100)) {
 				exit(1);
+			}
 			break;
 		case 305:
 			// --shadow-exclude-reg
@@ -737,8 +739,9 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
 			break;
 		case 340:
 			// --corner-radius-rules
-			if (!parse_numeric_window_rule(&opt->corner_radius_rules, optarg, 0, INT_MAX))
+			if (!parse_numeric_window_rule(&opt->corner_radius_rules, optarg, 0, INT_MAX)) {
 				exit(1);
+			}
 			break;
 		case 335:
 			// --clip-shadow-above
