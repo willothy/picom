@@ -2777,11 +2777,9 @@ bool win_skip_fading(session_t *ps, struct managed_win *w) {
 // TODO(absolutelynothelix): rename to x_update_win_(randr_?)monitor and move to
 // the x.c.
 void win_update_monitor(struct x_monitors *monitors, struct managed_win *mw) {
-	mw->randr_monitor = -1;
 	for (int i = 0; i < monitors->count; i++) {
 		auto e = pixman_region32_extents(&monitors->regions[i]);
-		if (e->x1 <= mw->g.x && e->y1 <= mw->g.y &&
-		    e->x2 >= mw->g.x + mw->widthb && e->y2 >= mw->g.y + mw->heightb) {
+		if ((e->x1 <= mw->g.x || e->x1 <= mw->pending_g.x) && (e->x2 >= mw->g.x + mw->widthb || e->x2 >= mw->pending_g.x + mw->widthb)) {
 			mw->randr_monitor = i;
 			log_debug("Window %#010x (%s), %dx%d+%dx%d, is entirely on the "
 			          "monitor %d (%dx%d+%dx%d)",
