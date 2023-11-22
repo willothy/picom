@@ -804,7 +804,7 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 		// IMPORTANT: These window animation steps must happen before any other
 		// [pre]processing. This is because it changes the window's geometry.
 		if (ps->o.animations &&
-			!isnan(w->animation_progress) && w->animation_progress <= 0.999999999 &&
+			!isnan(w->animation_progress) && w->animation_progress != 1.0 &&
 			ps->o.wintype_option[w->window_type].animation != 0 &&
 			win_is_mapped_in_x(w))
 		{
@@ -814,15 +814,15 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 				w->animation_dest_center_y - w->animation_center_y;
 			double neg_displacement_w = w->animation_dest_w - w->animation_w;
 			double neg_displacement_h = w->animation_dest_h - w->animation_h;
-		    double animation_stiffness = ps->o.animation_stiffness;
-		    if (!(w->animation_is_tag & ANIM_IN_TAG)) {
-			if (w->animation_is_tag & ANIM_SLOW)
-			    animation_stiffness = ps->o.animation_stiffness_tag_change;
-			else if (w->animation_is_tag & ANIM_FAST)
-			    animation_stiffness = ps->o.animation_stiffness_tag_change * 1.5;
-		    }
-            if (w->state == WSTATE_FADING && !(w->animation_is_tag & ANIM_FADE))
-                w->opacity_target = win_calc_opacity_target(ps, w);
+			double animation_stiffness = ps->o.animation_stiffness;
+			if (!(w->animation_is_tag & ANIM_IN_TAG)) {
+				if (w->animation_is_tag & ANIM_SLOW)
+				    animation_stiffness = ps->o.animation_stiffness_tag_change;
+				else if (w->animation_is_tag & ANIM_FAST)
+				    animation_stiffness = ps->o.animation_stiffness_tag_change * 1.5;
+			}
+			if (w->state == WSTATE_FADING && !(w->animation_is_tag & ANIM_FADE))
+				w->opacity_target = win_calc_opacity_target(ps, w);
 			double acceleration_x =
 				(animation_stiffness * neg_displacement_x -
 					ps->o.animation_dampening * w->animation_velocity_x) /
@@ -925,17 +925,18 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 			w->g.width = (uint16_t)new_animation_w;
 			w->g.height = (uint16_t)new_animation_h;
 
-            if (w->animation_is_tag > ANIM_IN_TAG && (((w->animation_is_tag & ANIM_FADE) && w->opacity_target == w->opacity)  || ((w->g.width == 0 || w->g.height == 0) && (w->animation_dest_w == 0 || w->animation_dest_h == 0)))) {
-                w->g.x = w->pending_g.x;
-                w->g.y = w->pending_g.y;
-                if (ps->o.animation_for_next_tag < OPEN_WINDOW_ANIMATION_ZOOM) {
-                    w->g.width = w->pending_g.width;
-                    w->g.height = w->pending_g.height;
-                } else {
-                    w->g.width = 0;
-                    w->g.height = 0;
-                }
-            }
+
+			if (w->animation_is_tag > ANIM_IN_TAG && (((w->animation_is_tag & ANIM_FADE) && w->opacity_target == w->opacity)  || ((w->g.width == 0 || w->g.height == 0) && (w->animation_dest_w == 0 || w->animation_dest_h == 0)))) {
+					w->g.x = w->pending_g.x;
+					w->g.y = w->pending_g.y;
+					if (ps->o.animation_for_next_tag < OPEN_WINDOW_ANIMATION_ZOOM) {
+						w->g.width = w->pending_g.width;
+						w->g.height = w->pending_g.height;
+					} else {
+						w->g.width = 0;
+						w->g.height = 0;
+					}
+				}
 
 			// Submit window size change
 			if (size_changed) {
@@ -1560,7 +1561,7 @@ static bool redirect_start(session_t *ps) {
 	}
 
 	ps->frame_pacing = !ps->o.no_frame_pacing;
-	if ((ps->o.legacy_backends || ps->o.benchmark || !ps->backend_data->ops->last_render_time) &&
+	if ((ps->o.legacy_backends || ps->o.animations || ps->o.benchmark || !ps->backend_data->ops->last_render_time) &&
 	    ps->frame_pacing) {
 		// Disable frame pacing if we are using a legacy backend or if we are in
 		// benchmark mode, or if the backend doesn't report render time
@@ -2595,6 +2596,8 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
 	ev_init(&ps->draw_timer, draw_callback);
 
 	ev_init(&ps->fade_timer, fade_timer_callback);
+	ev_init(&ps->animation_timer, animation_timer_callback);
+
 
 	// Set up SIGUSR1 signal handler to reset program
 	ev_signal_init(&ps->usr1_signal, reset_enable, SIGUSR1);
@@ -2684,8 +2687,6 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
 	ps->pending_updates = true;
 
 	write_pid(ps);
-
-	ev_init(&ps->animation_timer, animation_timer_callback);
 
 	if (fork && stderr_logger) {
 		// Remove the stderr logger if we will fork

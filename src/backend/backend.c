@@ -517,7 +517,7 @@ void paint_all_new(session_t *ps, struct managed_win *t) {
 		}
 
 		// Draw window on target
-		bool is_animating = 0 < w->animation_progress && w->animation_progress < 1.0;
+		bool is_animating = 0 <= w->animation_progress && w->animation_progress < 1.0;
 		if (w->frame_opacity == 1 && !is_animating) {
 			ps->backend_data->ops->compose(ps->backend_data, w->win_image,
 			                               window_coord, NULL, dest_coord,

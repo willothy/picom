@@ -476,17 +476,11 @@ static void win_update_properties(session_t *ps, struct managed_win *w) {
 static void init_animation(session_t *ps, struct managed_win *w) {
 	CLEAR_MASK(w->animation_is_tag)
 	static int32_t randr_mon_center_x, randr_mon_center_y;
-	if (w->randr_monitor == -1) {
-		win_update_monitor(&ps->monitors, w);
-		if (w->randr_monitor != -1) {
-			auto e = pixman_region32_extents(&ps->monitors.regions[w->randr_monitor]);
-			randr_mon_center_x = (e->x2 + e->x1) / 2, randr_mon_center_y = (e->y2 + e->y1) / 2;
-		} else {
-			randr_mon_center_x = ps->root_width / 2, randr_mon_center_y = ps->root_height / 2;
-		}
-	} else {
+	if (w->randr_monitor != -1) {
 		auto e = pixman_region32_extents(&ps->monitors.regions[w->randr_monitor]);
 		randr_mon_center_x = (e->x2 + e->x1) / 2, randr_mon_center_y = (e->y2 + e->y1) / 2;
+	} else {
+		randr_mon_center_x = ps->root_width / 2, randr_mon_center_y = ps->root_height / 2;
 	}
 	static double *anim_x, *anim_y, *anim_w, *anim_h;
 	enum open_window_animation animation;
@@ -689,7 +683,6 @@ void win_process_update_flags(session_t *ps, struct managed_win *w) {
 
         // Determine if a window should animate
 		if (win_should_animate(ps, w)) {
-			win_update_bounding_shape(ps, w);
 			if (w->pending_g.y < 0 && w->g.y > 0 && abs(w->pending_g.y - w->g.y) >= w->pending_g.height)
 				w->dwm_mask = ANIM_PREV_TAG;
 			else if (w->pending_g.y > 0 && w->g.y < 0 && abs(w->pending_g.y - w->g.y) >= w->pending_g.height)
@@ -760,12 +753,12 @@ void win_process_update_flags(session_t *ps, struct managed_win *w) {
 			w->g = w->pending_g;
 		}
 
-        if (win_check_flags_all(w, WIN_FLAGS_SIZE_STALE)) {
-            win_on_win_size_change(ps, w);
-            win_update_bounding_shape(ps, w);
-            damaged = true;
-            win_clear_flags(w, WIN_FLAGS_SIZE_STALE);
-        }
+		if (win_check_flags_all(w, WIN_FLAGS_SIZE_STALE)) {
+			win_on_win_size_change(ps, w);
+			win_update_bounding_shape(ps, w);
+			damaged = true;
+			win_clear_flags(w, WIN_FLAGS_SIZE_STALE);
+		}
 
 		if (win_check_flags_all(w, WIN_FLAGS_POSITION_STALE)) {
 			damaged = true;
@@ -1496,10 +1489,8 @@ void win_on_factor_change(session_t *ps, struct managed_win *w) {
 	// focused state of the window
 	win_update_focused(ps, w);
 
-	if (w->animation_progress > 0.99999999 || (w->animation_progress == 0.0 && ps->animation_time != 0L)) {
-		win_determine_shadow(ps, w);
-		win_determine_clip_shadow_above(ps, w);
-	}
+	win_determine_shadow(ps, w);
+	win_determine_clip_shadow_above(ps, w);
 	win_determine_invert_color(ps, w);
 	win_determine_blur_background(ps, w);
 	win_determine_rounded_corners(ps, w);
@@ -1810,7 +1801,7 @@ struct win *fill_win(session_t *ps, struct win *w) {
 	    .animation_velocity_y = 0.0,             // updated by window geometry changes
 	    .animation_velocity_w = 0.0,             // updated by window geometry changes
 	    .animation_velocity_h = 0.0,             // updated by window geometry changes
-	    .animation_progress = 0.0,               // updated by window geometry changes
+	    .animation_progress = 1.0,               // updated by window geometry changes
 	    .animation_inv_og_distance = NAN,        // updated by window geometry changes
 	    .reg_ignore_valid = false,               // set to true when damaged
 	    .flags = WIN_FLAGS_IMAGES_NONE,          // updated by property/attributes/etc
@@ -2697,8 +2688,8 @@ void unmap_win_start(session_t *ps, struct managed_win *w) {
 	w->opacity_target = win_calc_opacity_target(ps, w);
 
     if (ps->o.animations && ps->o.animation_for_unmap_window != OPEN_WINDOW_ANIMATION_NONE && ps->o.wintype_option[w->window_type].animation) {
-        w->dwm_mask = ANIM_UNMAP;
-        init_animation(ps, w);
+		w->dwm_mask = ANIM_UNMAP;
+		init_animation(ps, w);
 
 		double x_dist = w->animation_dest_center_x - w->animation_center_x;
 		double y_dist = w->animation_dest_center_y - w->animation_center_y;
@@ -3059,10 +3050,6 @@ win_is_fullscreen_xcb(xcb_connection_t *c, const struct atom *a, const xcb_windo
 void win_set_flags(struct managed_win *w, uint64_t flags) {
 	log_debug("Set flags %" PRIu64 " to window %#010x (%s)", flags, w->base.id, w->name);
 	if (unlikely(w->state == WSTATE_DESTROYING)) {
-        if (w->animation_progress != 1.0) {
-            // Return because animation will trigger some of the flags
-            return;
-        }
 		log_error("Flags set on a destroyed window %#010x (%s)", w->base.id, w->name);
 		return;
 	}
@@ -3075,10 +3062,6 @@ void win_clear_flags(struct managed_win *w, uint64_t flags) {
 	log_debug("Clear flags %" PRIu64 " from window %#010x (%s)", flags, w->base.id,
 	          w->name);
 	if (unlikely(w->state == WSTATE_DESTROYING)) {
-        if (w->animation_progress != 1.0) {
-            // Return because animation will trigger some of the flags
-            return;
-        }
 		log_warn("Flags cleared on a destroyed window %#010x (%s)", w->base.id,
 		         w->name);
 		return;

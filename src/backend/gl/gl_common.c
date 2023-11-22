@@ -497,7 +497,7 @@ void x_rect_to_coords(int nrects, const rect_t *rects, coord_t image_dst,
                       int extent_height, int texture_height, int root_height,
                       bool y_inverted, GLint *coord, GLuint *indices) {
 	image_dst.y = root_height - image_dst.y;
-    image_dst.y -= extent_height;
+	image_dst.y -= extent_height;
 
 
 	for (int i = 0; i < nrects; i++) {
