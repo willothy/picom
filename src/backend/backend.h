@@ -119,11 +119,7 @@ struct backend_operations {
 	// ===========    Initialization    ===========
 
 	/// Initialize the backend, prepare for rendering to the target window.
-	/// Here is how you should choose target window:
-	///    1) if ps->overlay is not XCB_NONE, use that
-	///    2) use ps->root otherwise
-	// TODO(yshui) make the target window a parameter
-	backend_t *(*init)(session_t *)attr_nonnull(1);
+	backend_t *(*init)(session_t *, xcb_window_t)attr_nonnull(1);
 	void (*deinit)(backend_t *backend_data) attr_nonnull(1);
 
 	/// Called when rendering will be stopped for an unknown amount of
@@ -220,18 +216,18 @@ struct backend_operations {
 	                     struct xvisual_info fmt, bool owned);
 
 	/// Create a shadow context for rendering shadows with radius `radius`.
-	/// Default implementation: default_backend_create_shadow_context
+	/// Default implementation: default_create_shadow_context
 	struct backend_shadow_context *(*create_shadow_context)(backend_t *backend_data,
 	                                                        double radius);
 	/// Destroy a shadow context
-	/// Default implementation: default_backend_destroy_shadow_context
+	/// Default implementation: default_destroy_shadow_context
 	void (*destroy_shadow_context)(backend_t *backend_data,
 	                               struct backend_shadow_context *ctx);
 
 	/// Create a shadow image based on the parameters. Resulting image should have a
 	/// size of `width + radisu * 2` x `height + radius * 2`. Radius is set when the
 	/// shadow context is created.
-	/// Default implementation: default_backend_render_shadow
+	/// Default implementation: default_render_shadow
 	///
 	/// Required.
 	void *(*render_shadow)(backend_t *backend_data, int width, int height,

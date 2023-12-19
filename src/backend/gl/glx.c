@@ -227,13 +227,13 @@ static bool glx_set_swap_interval(int interval, Display *dpy, GLXDrawable drawab
 /**
  * Initialize OpenGL.
  */
-static backend_t *glx_init(session_t *ps) {
+static backend_t *glx_init(session_t *ps, xcb_window_t target) {
 	bool success = false;
 	glxext_init(ps->c.dpy, ps->c.screen);
 	auto gd = ccalloc(1, struct _glx_data);
 	init_backend_base(&gd->gl.base, ps);
 
-	gd->target_win = session_get_target_window(ps);
+	gd->target_win = target;
 
 	XVisualInfo *pvis = NULL;
 
@@ -371,12 +371,12 @@ glx_bind_pixmap(backend_t *base, xcb_pixmap_t pixmap, struct xvisual_info fmt, b
 	if (fmt.visual_depth > OPENGL_MAX_DEPTH) {
 		log_error("Requested depth %d higher than max possible depth %d.",
 		          fmt.visual_depth, OPENGL_MAX_DEPTH);
-		return false;
+		return NULL;
 	}
 
 	if (fmt.visual_depth < 0) {
 		log_error("Pixmap %#010x with invalid depth %d", pixmap, fmt.visual_depth);
-		return false;
+		return NULL;
 	}
 
 	auto r =

@@ -176,8 +176,8 @@ static xcb_render_picture_t process_mask(struct _xrender_data *xd, struct xrende
 		*allocated = false;
 		return inner->pict;
 	}
-	const auto tmpw = to_u16_checked(inner->width);
-	const auto tmph = to_u16_checked(inner->height);
+	auto const tmpw = to_u16_checked(inner->width);
+	auto const tmph = to_u16_checked(inner->height);
 	*allocated = true;
 	x_clear_picture_clip_region(xd->base.c, inner->pict);
 	auto ret = x_create_picture_with_visual(
@@ -226,13 +226,13 @@ compose_impl(struct _xrender_data *xd, struct xrender_image *xrimg, coord_t dst,
 	region_t reg;
 
 	bool has_alpha = inner->has_alpha || img->opacity != 1;
-	const auto tmpw = to_u16_checked(inner->width);
-	const auto tmph = to_u16_checked(inner->height);
-	const auto tmpew = to_u16_checked(img->ewidth);
-	const auto tmpeh = to_u16_checked(img->eheight);
+	auto const tmpw = to_u16_checked(inner->width);
+	auto const tmph = to_u16_checked(inner->height);
+	auto const tmpew = to_u16_checked(img->ewidth);
+	auto const tmpeh = to_u16_checked(img->eheight);
 	// Remember: the mask has a 1-pixel border
-	const auto mask_dst_x = to_i16_checked(dst.x - mask_dst.x + 1);
-	const auto mask_dst_y = to_i16_checked(dst.y - mask_dst.y + 1);
+	auto const mask_dst_x = to_i16_checked(dst.x - mask_dst.x + 1);
+	auto const mask_dst_y = to_i16_checked(dst.y - mask_dst.y + 1);
 	const xcb_render_color_t dim_color = {
 	    .red = 0, .green = 0, .blue = 0, .alpha = (uint16_t)(0xffff * img->dim)};
 
@@ -250,10 +250,16 @@ compose_impl(struct _xrender_data *xd, struct xrender_image *xrimg, coord_t dst,
 	}
 	if (((img->color_inverted || img->dim != 0) && has_alpha) || img->corner_radius != 0) {
 		// Apply image properties using a temporary image, because the source
-		// image is transparent. Otherwise the properties can be applied directly
-		// on the target image.
+		// image is transparent or will get transparent corners. Otherwise the
+		// properties can be applied directly on the target image.
+		// Also force a 32-bit ARGB visual for transparent corners, otherwise the
+		// corners become black.
+		auto visual =
+		    (img->corner_radius != 0 && inner->depth != 32)
+		        ? x_get_visual_for_standard(xd->base.c, XCB_PICT_STANDARD_ARGB_32)
+		        : inner->visual;
 		auto tmp_pict = x_create_picture_with_visual(
-		    xd->base.c, inner->width, inner->height, inner->visual, 0, NULL);
+		    xd->base.c, inner->width, inner->height, visual, 0, NULL);
 
 		// Set clip region translated to source coordinate
 		x_set_picture_clip_region(xd->base.c, tmp_pict, to_i16_checked(-dst.x),
@@ -395,8 +401,8 @@ static bool blur(backend_t *backend_data, double opacity, void *ctx_, void *mask
 	    resize_region(&reg_op, bctx->resize_width, bctx->resize_height);
 
 	const pixman_box32_t *extent_resized = pixman_region32_extents(&reg_op_resized);
-	const auto height_resized = to_u16_checked(extent_resized->y2 - extent_resized->y1);
-	const auto width_resized = to_u16_checked(extent_resized->x2 - extent_resized->x1);
+	auto const height_resized = to_u16_checked(extent_resized->y2 - extent_resized->y1);
+	auto const width_resized = to_u16_checked(extent_resized->x2 - extent_resized->x1);
 	static const char *filter0 = "Nearest";        // The "null" filter
 	static const char *filter = "convolution";
 
@@ -872,7 +878,7 @@ static void get_blur_size(void *blur_context, int *width, int *height) {
 	*height = ctx->resize_height;
 }
 
-static backend_t *backend_xrender_init(session_t *ps) {
+static backend_t *backend_xrender_init(session_t *ps, xcb_window_t target) {
 	if (ps->o.dithered_present) {
 		log_warn("\"dithered-present\" is not supported by the xrender backend.");
 	}
@@ -891,7 +897,7 @@ static backend_t *backend_xrender_init(session_t *ps) {
 	xd->black_pixel = solid_picture(&ps->c, true, 1, 0, 0, 0);
 	xd->white_pixel = solid_picture(&ps->c, true, 1, 1, 1, 1);
 
-	xd->target_win = session_get_target_window(ps);
+	xd->target_win = target;
 	xcb_render_create_picture_value_list_t pa = {
 	    .subwindowmode = XCB_SUBWINDOW_MODE_INCLUDE_INFERIORS,
 	};
@@ -984,10 +990,8 @@ struct backend_operations xrender_ops = {
     .release_image = release_image,
     .create_shadow_context = default_create_shadow_context,
     .destroy_shadow_context = default_destroy_shadow_context,
-    .render_shadow = default_backend_render_shadow,
+    .render_shadow = default_render_shadow,
     .make_mask = make_mask,
-    //.prepare_win = prepare_win,
-    //.release_win = release_win,
     .is_image_transparent = default_is_image_transparent,
     .buffer_age = buffer_age,
     .max_buffer_age = 2,

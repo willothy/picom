@@ -265,7 +265,7 @@ void schedule_render(session_t *ps, bool triggered_by_vblank) {
 		goto schedule;
 	}
 
-	const auto deadline = ps->last_msc_instant + (unsigned long)divisor * frame_time;
+	auto const deadline = ps->last_msc_instant + (unsigned long)divisor * frame_time;
 	unsigned int available = 0;
 	if (deadline > now_us) {
 		available = (unsigned int)(deadline - now_us);
@@ -605,7 +605,8 @@ static bool initialize_backend(session_t *ps) {
 		assert(!ps->backend_data);
 		// Reinitialize win_data
 		assert(backend_list[ps->o.backend]);
-		ps->backend_data = backend_list[ps->o.backend]->init(ps);
+		ps->backend_data =
+		    backend_list[ps->o.backend]->init(ps, session_get_target_window(ps));
 		if (!ps->backend_data) {
 			log_fatal("Failed to initialize backend, aborting...");
 			quit(ps);
@@ -770,6 +771,11 @@ static void handle_root_flags(session_t *ps) {
 
 static struct managed_win *
 paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
+/**
+ * Go through the window stack and calculate some parameters for rendering.
+ *
+ * @return whether the operation succeeded
+ */
 	// XXX need better, more general name for `fade_running`. It really
 	// means if fade is still ongoing after the current frame is rendered.
 	// Same goes for `animation_running`.
@@ -1209,7 +1215,7 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 		ev_timer_stop(ps->loop, &ps->unredir_timer);
 		if (!ps->redirected) {
 			if (!redirect_start(ps)) {
-				return NULL;
+				return false;
 			}
 		}
 	}
@@ -1331,7 +1337,7 @@ static int register_cm(session_t *ps) {
 	// Set WM_CLIENT_MACHINE. As per EWMH, because we set _NET_WM_PID, we must also
 	// set WM_CLIENT_MACHINE.
 	{
-		const auto hostname_max = (unsigned long)sysconf(_SC_HOST_NAME_MAX);
+		auto const hostname_max = (unsigned long)sysconf(_SC_HOST_NAME_MAX);
 		char *hostname = malloc(hostname_max);
 
 		if (gethostname(hostname, hostname_max) == 0) {
