@@ -2013,21 +2013,6 @@ static void draw_callback_impl(EV_P_ session_t *ps, int revents attr_unused) {
 	// TODO(yshui) Investigate how big the X critical section needs to be. There are
 	// suggestions that rendering should be in the critical section as well.
 
-<<<<<<< HEAD
-	ps->redraw_needed = false;
-=======
-	// Queue redraw if animation is running. This should be picked up by next present
-	// event.
-	if (animation) {
-		queue_redraw(ps);
-	}
-	if (ps->vblank_scheduler) {
-		// Even if we might not want to render during next vblank, we want to keep
-		// `backend_busy` up to date, so when the next render comes, we can
-		// immediately know if we can render.
-		vblank_scheduler_schedule(ps->vblank_scheduler, check_render_finish, ps);
-	}
->>>>>>> yshui/next
 }
 
 static void draw_callback(EV_P_ ev_timer *w, int revents) {
@@ -2943,11 +2928,7 @@ static void session_destroy(session_t *ps) {
 	// Stop libev event handlers
 	ev_timer_stop(ps->loop, &ps->unredir_timer);
 	ev_timer_stop(ps->loop, &ps->fade_timer);
-<<<<<<< HEAD
 	ev_timer_stop(ps->loop, &ps->animation_timer);
-	ev_timer_stop(ps->loop, &ps->dpms_check_timer);
-=======
->>>>>>> yshui/next
 	ev_timer_stop(ps->loop, &ps->draw_timer);
 	ev_prepare_stop(ps->loop, &ps->event_check);
 	ev_signal_stop(ps->loop, &ps->usr1_signal);
