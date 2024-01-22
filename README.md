@@ -96,6 +96,12 @@ $ ninja -C build install
 
 Default install prefix is `/usr/local`, you can change it with `meson configure -Dprefix=<path> build`
 
+## Running
+To launch with all animations as a background process you can use:
+`picom --animations -b`
+
+To only have specific animations, enable them with cli flags (see `picom --help`) or add them to your picom config.
+
 ## How to Contribute
 
 All contributions are welcome!
