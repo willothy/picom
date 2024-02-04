@@ -1222,7 +1222,7 @@ static void win_set_shadow(session_t *ps, struct managed_win *w, bool shadow_new
 
 		// Delayed update of shadow image
 		// By setting WIN_FLAGS_SHADOW_STALE, we ask win_process_flags to
-		// re-create or release the shaodw in based on whether w->shadow
+		// re-create or release the shadow in based on whether w->shadow
 		// is set.
 		win_set_flags(w, WIN_FLAGS_SHADOW_STALE);
 
@@ -1407,14 +1407,14 @@ static void win_determine_blur_background(session_t *ps, struct managed_win *w) 
  * Determine if a window should have rounded corners.
  */
 static void win_determine_rounded_corners(session_t *ps, struct managed_win *w) {
-	if (ps->o.corner_radius == 0) {
-		w->corner_radius = 0;
-		return;
-	}
-
 	void *radius_override = NULL;
 	if (c2_match(ps, w, ps->o.corner_radius_rules, &radius_override)) {
 		log_debug("Matched corner rule! %d", w->corner_radius);
+	}
+
+	if (ps->o.corner_radius == 0 && !radius_override) {
+		w->corner_radius = 0;
+		return;
 	}
 
 	// Don't round full screen windows & excluded windows,
@@ -2259,7 +2259,7 @@ void win_update_bounding_shape(session_t *ps, struct managed_win *w) {
 
 		// Add border width because we are using a different origin.
 		// X thinks the top left of the inner window is the origin
-		// (for the bounding shape, althought xcb_get_geometry thinks
+		// (for the bounding shape, although xcb_get_geometry thinks
 		//  the outer top left (outer means outside of the window
 		//  border) is the origin),
 		// We think the top left of the border is the origin
@@ -2602,7 +2602,7 @@ bool destroy_win_start(session_t *ps, struct win *w) {
 	HASH_DEL(ps->windows, w);
 
 	if (!w->managed || mw->state == WSTATE_UNMAPPED) {
-		// Window is already unmapped, or is an unmanged window, just
+		// Window is already unmapped, or is an unmanaged window, just
 		// destroy it
 		destroy_win_finish(ps, w);
 		return true;
@@ -3031,7 +3031,7 @@ static inline bool rect_is_fullscreen(const session_t *ps, int x, int y, int wid
 }
 
 /**
- * Check if a window is fulscreen using EWMH
+ * Check if a window is full-screen using EWMH
  *
  * TODO(yshui) cache this property
  */

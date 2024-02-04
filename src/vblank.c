@@ -18,7 +18,6 @@
 #include <X11/Xutil.h>
 #include <pthread.h>
 
-#include "backend/gl/glx.h"
 #endif
 
 #include "compiler.h"
@@ -63,9 +62,9 @@ struct present_vblank_scheduler {
 
 struct vblank_scheduler_ops {
 	size_t size;
-	void (*init)(struct vblank_scheduler *self);
+	bool (*init)(struct vblank_scheduler *self);
 	void (*deinit)(struct vblank_scheduler *self);
-	void (*schedule)(struct vblank_scheduler *self);
+	bool (*schedule)(struct vblank_scheduler *self);
 	bool (*handle_x_events)(struct vblank_scheduler *self);
 };
 
@@ -78,13 +77,14 @@ struct sgi_video_sync_vblank_scheduler {
 
 	// Since glXWaitVideoSyncSGI blocks, we need to run it in a separate thread.
 	// ... and all the thread shenanigans that come with it.
-	_Atomic unsigned int last_msc;
-	_Atomic uint64_t last_ust;
+	_Atomic unsigned int current_msc;
+	_Atomic uint64_t current_ust;
 	ev_async notify;
 	pthread_t sync_thread;
 	bool running, error;
+	unsigned int last_msc;
 
-	/// Protects `running`, `error` and `base.vblank_event_requested`
+	/// Protects `running`, and `base.vblank_event_requested`
 	pthread_mutex_t vblank_requested_mtx;
 	pthread_cond_t vblank_requested_cnd;
 };
@@ -95,6 +95,8 @@ struct sgi_video_sync_thread_args {
 	pthread_mutex_t start_mtx;
 	pthread_cond_t start_cnd;
 };
+
+static PFNGLXWAITVIDEOSYNCSGIPROC glXWaitVideoSyncSGI;
 
 static bool check_sgi_video_sync_extension(Display *dpy, int screen) {
 	const char *glx_ext = glXQueryExtensionsString(dpy, screen);
@@ -207,8 +209,8 @@ static void *sgi_video_sync_thread(void *data) {
 
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		atomic_store(&self->last_msc, last_msc);
-		atomic_store(&self->last_ust,
+		atomic_store(&self->current_msc, last_msc);
+		atomic_store(&self->current_ust,
 		             (uint64_t)(now.tv_sec * 1000000 + now.tv_nsec / 1000));
 		ev_async_send(self->base.loop, &self->notify);
 		pthread_mutex_lock(&self->vblank_requested_mtx);
@@ -239,34 +241,30 @@ cleanup:
 	return NULL;
 }
 
-static void sgi_video_sync_scheduler_schedule(struct vblank_scheduler *base) {
+static bool sgi_video_sync_scheduler_schedule(struct vblank_scheduler *base) {
 	auto self = (struct sgi_video_sync_vblank_scheduler *)base;
-	log_verbose("Requesting vblank event for msc %d", self->last_msc + 1);
+	if (self->error) {
+		return false;
+	}
+	log_verbose("Requesting vblank event for msc %d", self->current_msc + 1);
 	pthread_mutex_lock(&self->vblank_requested_mtx);
 	assert(!base->vblank_event_requested);
 	base->vblank_event_requested = true;
 	pthread_cond_signal(&self->vblank_requested_cnd);
 	pthread_mutex_unlock(&self->vblank_requested_mtx);
+	return true;
 }
 
 static void
-sgi_video_sync_scheduler_callback(EV_P attr_unused, ev_async *w, int attr_unused revents) {
-	auto sched = container_of(w, struct sgi_video_sync_vblank_scheduler, notify);
-	auto event = (struct vblank_event){
-	    .msc = atomic_load(&sched->last_msc),
-	    .ust = atomic_load(&sched->last_ust),
-	};
-	sched->base.vblank_event_requested = false;
-	log_verbose("Received vblank event for msc %lu", event.msc);
-	vblank_scheduler_invoke_callbacks(&sched->base, &event);
-}
+sgi_video_sync_scheduler_callback(EV_P attr_unused, ev_async *w, int attr_unused revents);
 
-static void sgi_video_sync_scheduler_init(struct vblank_scheduler *base) {
+static bool sgi_video_sync_scheduler_init(struct vblank_scheduler *base) {
 	auto self = (struct sgi_video_sync_vblank_scheduler *)base;
 	auto args = (struct sgi_video_sync_thread_args){
 	    .self = self,
 	    .start_status = -1,
 	};
+	bool succeeded = true;
 	pthread_mutex_init(&args.start_mtx, NULL);
 	pthread_cond_init(&args.start_cnd, NULL);
 
@@ -286,11 +284,15 @@ static void sgi_video_sync_scheduler_init(struct vblank_scheduler *base) {
 	if (args.start_status != 0) {
 		log_fatal("Failed to start sgi_video_sync_thread, error code: %d",
 		          args.start_status);
-		abort();
+		succeeded = false;
+	} else {
+		log_info("Started sgi_video_sync_thread");
 	}
+	self->error = !succeeded;
+	self->last_msc = 0;
 	pthread_mutex_destroy(&args.start_mtx);
 	pthread_cond_destroy(&args.start_cnd);
-	log_info("Started sgi_video_sync_thread");
+	return succeeded;
 }
 
 static void sgi_video_sync_scheduler_deinit(struct vblank_scheduler *base) {
@@ -306,15 +308,45 @@ static void sgi_video_sync_scheduler_deinit(struct vblank_scheduler *base) {
 	pthread_mutex_destroy(&self->vblank_requested_mtx);
 	pthread_cond_destroy(&self->vblank_requested_cnd);
 }
+
+static void
+sgi_video_sync_scheduler_callback(EV_P attr_unused, ev_async *w, int attr_unused revents) {
+	auto sched = container_of(w, struct sgi_video_sync_vblank_scheduler, notify);
+	auto msc = atomic_load(&sched->current_msc);
+	if (sched->last_msc == msc) {
+		// NVIDIA spams us with duplicate vblank events after a suspend/resume
+		// cycle. Recreating the X connection and GLX context seems to fix this.
+		// Oh NVIDIA.
+		log_warn("Duplicate vblank event found with msc %d. Possible NVIDIA bug?", msc);
+		log_warn("Resetting the vblank scheduler");
+		sgi_video_sync_scheduler_deinit(&sched->base);
+		sched->base.vblank_event_requested = false;
+		if (!sgi_video_sync_scheduler_init(&sched->base)) {
+			log_error("Failed to reset the vblank scheduler");
+		} else {
+			sgi_video_sync_scheduler_schedule(&sched->base);
+		}
+		return;
+	}
+	auto event = (struct vblank_event){
+	    .msc = msc,
+	    .ust = atomic_load(&sched->current_ust),
+	};
+	sched->base.vblank_event_requested = false;
+	sched->last_msc = msc;
+	log_verbose("Received vblank event for msc %lu", event.msc);
+	vblank_scheduler_invoke_callbacks(&sched->base, &event);
+}
 #endif
 
-static void present_vblank_scheduler_schedule(struct vblank_scheduler *base) {
+static bool present_vblank_scheduler_schedule(struct vblank_scheduler *base) {
 	auto self = (struct present_vblank_scheduler *)base;
 	log_verbose("Requesting vblank event for window 0x%08x, msc %" PRIu64,
 	            base->target_window, self->last_msc + 1);
 	assert(!base->vblank_event_requested);
 	x_request_vblank_event(base->c, base->target_window, self->last_msc + 1);
 	base->vblank_event_requested = true;
+	return true;
 }
 
 static void present_vblank_callback(EV_P attr_unused, ev_timer *w, int attr_unused revents) {
@@ -327,7 +359,7 @@ static void present_vblank_callback(EV_P attr_unused, ev_timer *w, int attr_unus
 	vblank_scheduler_invoke_callbacks(&sched->base, &event);
 }
 
-static void present_vblank_scheduler_init(struct vblank_scheduler *base) {
+static bool present_vblank_scheduler_init(struct vblank_scheduler *base) {
 	auto self = (struct present_vblank_scheduler *)base;
 	base->type = VBLANK_SCHEDULER_PRESENT;
 	ev_timer_init(&self->callback_timer, present_vblank_callback, 0, 0);
@@ -339,6 +371,7 @@ static void present_vblank_scheduler_init(struct vblank_scheduler *base) {
 	set_cant_fail_cookie(base->c, select_input);
 	self->event =
 	    xcb_register_for_special_xge(base->c->c, &xcb_present_id, self->event_id, NULL);
+	return true;
 }
 
 static void present_vblank_scheduler_deinit(struct vblank_scheduler *base) {
@@ -439,17 +472,19 @@ static const struct vblank_scheduler_ops vblank_scheduler_ops[LAST_VBLANK_SCHEDU
 #endif
 };
 
-static void vblank_scheduler_schedule_internal(struct vblank_scheduler *self) {
+static bool vblank_scheduler_schedule_internal(struct vblank_scheduler *self) {
 	assert(self->type < LAST_VBLANK_SCHEDULER);
 	auto fn = vblank_scheduler_ops[self->type].schedule;
 	assert(fn != NULL);
-	fn(self);
+	return fn(self);
 }
 
 bool vblank_scheduler_schedule(struct vblank_scheduler *self,
                                vblank_callback_t vblank_callback, void *user_data) {
 	if (self->callback_count == 0 && self->wind_down == 0) {
-		vblank_scheduler_schedule_internal(self);
+		if (!vblank_scheduler_schedule_internal(self)) {
+			return false;
+		}
 	}
 	if (self->callback_count == self->callback_capacity) {
 		size_t new_capacity =

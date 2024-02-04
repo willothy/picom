@@ -270,7 +270,7 @@ enum vblank_callback_action reschedule_render_at_vblank(struct vblank_event *e, 
 ///    is no render currently scheduled. i.e. render_queued == false.
 /// 2. then, we need to figure out the best time to start rendering. we need to
 ///    at least know when the next vblank will start, as we can't start render
-///    before the current rendered frame is diplayed on screen. we have this
+///    before the current rendered frame is displayed on screen. we have this
 ///    information from the vblank scheduler, it will notify us when that happens.
 ///    we might also want to delay the rendering even further to reduce latency,
 ///    this is discussed below, in FUTURE WORKS.
@@ -1330,14 +1330,43 @@ void root_damaged(session_t *ps) {
 		}
 		auto pixmap = x_get_root_back_pixmap(&ps->c, ps->atoms);
 		if (pixmap != XCB_NONE) {
+			xcb_get_geometry_reply_t *r = xcb_get_geometry_reply(
+			    ps->c.c, xcb_get_geometry(ps->c.c, pixmap), NULL);
+			if (!r) {
+				goto err;
+			}
+
+			// We used to assume that pixmaps pointed by the root background
+			// pixmap atoms are owned by the root window and have the same
+			// depth and hence the same visual that we can use to bind them.
+			// However, some applications break this assumption, e.g. the
+			// Xfce's desktop manager xfdesktop that sets the _XROOTPMAP_ID
+			// atom to a pixmap owned by it that seems to always have 32 bpp
+			// depth when the common root window's depth is 24 bpp. So use the
+			// root window's visual only if the root background pixmap's depth
+			// matches the root window's depth. Otherwise, find a suitable
+			// visual for the root background pixmap's depth and use it.
+			//
+			// We can't obtain a suitable visual for the root background
+			// pixmap the same way as the win_bind_pixmap function because it
+			// requires a window and we have only a pixmap. We also can't not
+			// bind the root background pixmap in case of depth mismatch
+			// because some options rely on it's content, e.g.
+			// transparent-clipping.
+			xcb_visualid_t visual =
+			    r->depth == ps->c.screen_info->root_depth
+			        ? ps->c.screen_info->root_visual
+			        : x_get_visual_for_depth(&ps->c, r->depth);
+			free(r);
+
 			ps->root_image = ps->backend_data->ops->bind_pixmap(
-			    ps->backend_data, pixmap,
-			    x_get_visual_info(&ps->c, ps->c.screen_info->root_visual), false);
+			    ps->backend_data, pixmap, x_get_visual_info(&ps->c, visual), false);
 			if (ps->root_image) {
 				ps->backend_data->ops->set_image_property(
 				    ps->backend_data, IMAGE_PROPERTY_EFFECTIVE_SIZE,
 				    ps->root_image, (int[]){ps->root_width, ps->root_height});
 			} else {
+			err:
 				log_error("Failed to bind root back pixmap");
 			}
 		}
@@ -2040,7 +2069,7 @@ static void x_event_callback(EV_P attr_unused, ev_io *w, int revents attr_unused
 /**
  * Turn on the program reset flag.
  *
- * This will result in the compostior resetting itself after next paint.
+ * This will result in the compositor resetting itself after next paint.
  */
 static void reset_enable(EV_P_ ev_signal *w attr_unused, int revents attr_unused) {
 	log_info("picom is resetting...");
@@ -2117,11 +2146,11 @@ static bool load_shader_source_for_condition(const c2_lptr_t *cond, void *data) 
 /**
  * Initialize a session.
  *
- * @param argc number of commandline arguments
- * @param argv commandline arguments
+ * @param argc number of command line arguments
+ * @param argv command line arguments
  * @param dpy  the X Display
  * @param config_file the path to the config file
- * @param all_xerros whether we should report all X errors
+ * @param all_xerrors whether we should report all X errors
  * @param fork whether we will fork after initialization
  */
 static session_t *session_init(int argc, char **argv, Display *dpy,
@@ -2673,7 +2702,7 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
 	ps->server_grabbed = true;
 
 	// We are going to pull latest information from X server now, events sent by X
-	// earlier is irrelavant at this point.
+	// earlier is irrelevant at this point.
 	// A better solution is probably grabbing the server from the very start. But I
 	// think there still could be race condition that mandates discarding the events.
 	x_discard_events(&ps->c);
