@@ -484,18 +484,19 @@ static void init_animation(session_t *ps, struct managed_win *w) {
 	}
 	static double *anim_x, *anim_y, *anim_w, *anim_h;
 	enum open_window_animation animation;
-	if (ps->o.wintype_option[w->window_type].animation != OPEN_WINDOW_ANIMATION_INVALID
-		&& !w->dwm_mask) {
-		animation = ps->o.wintype_option[w->window_type].animation;
-	}
-	else
-		animation = ps->o.animation_for_open_window;
+
+	
+	animation = ps->o.animation_for_open_window;
 
 	if (w->window_type != WINTYPE_TOOLTIP &&
 		wid_has_prop(ps, w->client_win, ps->atoms->aWM_TRANSIENT_FOR)) {
 		animation = ps->o.animation_for_transient_window;
 	}
 
+	if (ps->o.wintype_option[w->window_type].animation != OPEN_WINDOW_ANIMATION_INVALID
+		&& !w->dwm_mask) {
+		animation = ps->o.wintype_option[w->window_type].animation;
+	}
 
 	anim_x = &w->animation_center_x, anim_y = &w->animation_center_y;
 	anim_w = &w->animation_w, anim_h = &w->animation_h;

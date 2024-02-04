@@ -1051,7 +1051,7 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 				}
 
 			// Submit window size change
-			if (size_changed) {
+			if (size_changed && w->state != WSTATE_UNMAPPED && w->state != WSTATE_DESTROYING && w->state != WSTATE_UNMAPPING) {
 				win_on_win_size_change(ps, w);
 
 				pixman_region32_clear(&w->bounding_shape);
