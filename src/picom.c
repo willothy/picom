@@ -930,13 +930,15 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 			double neg_displacement_h = w->animation_dest_h - w->animation_h;
 			double animation_stiffness = ps->o.animation_stiffness;
 			if (!(w->animation_is_tag & ANIM_IN_TAG)) {
-				if (w->animation_is_tag & ANIM_SLOW)
-				    animation_stiffness = ps->o.animation_stiffness_tag_change;
-				else if (w->animation_is_tag & ANIM_FAST)
-				    animation_stiffness = ps->o.animation_stiffness_tag_change * 1.5;
+				if (w->animation_is_tag & ANIM_SLOW) {
+				  animation_stiffness = ps->o.animation_stiffness_tag_change;
+				} else if (w->animation_is_tag & ANIM_FAST) {
+				  animation_stiffness = ps->o.animation_stiffness_tag_change * 1.5;
+        }
 			}
-			if (w->state == WSTATE_FADING && !(w->animation_is_tag & ANIM_FADE))
+			if (w->state == WSTATE_FADING && !(w->animation_is_tag & ANIM_FADE)) {
 				w->opacity_target = win_calc_opacity_target(ps, w);
+      }
 			double acceleration_x =
 				(animation_stiffness * neg_displacement_x -
 					ps->o.animation_dampening * w->animation_velocity_x) /
@@ -970,11 +972,13 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 
 			// Negative new width/height causes segfault and it can happen
 			// when clamping disabled and shading a window
-			if (new_animation_h < 0)
+			if (new_animation_h < 0) {
 				new_animation_h = 0;
+      }
 
-			if (new_animation_w < 0)
+			if (new_animation_w < 0) {
 				new_animation_w = 0;
+      }
 
 			if (ps->o.animation_clamping) {
 				w->animation_center_x = clamp(
@@ -1017,8 +1021,9 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 			bool geometry_changed = position_changed || size_changed;
 
 			// Mark past window region with damage
-			if (was_painted && geometry_changed)
+			if (was_painted && geometry_changed) {
 				add_damage_from_win(ps, w);
+      }
 
 			double x_dist = w->animation_dest_center_x - w->animation_center_x;
 			double y_dist = w->animation_dest_center_y - w->animation_center_y;
@@ -1031,8 +1036,9 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 
 			// When clamping disabled we don't want the overlayed image to
 			// fade in again because process is moving to negative value
-			if (w->animation_progress < old_animation_progress)
+			if (w->animation_progress < old_animation_progress) {
 				w->animation_progress = old_animation_progress;
+      }
 
 			w->g.x = (int16_t)new_animation_x;
 			w->g.y = (int16_t)new_animation_y;
@@ -1053,14 +1059,18 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 				}
 
 			// Submit window size change
-			if (size_changed && w->state != WSTATE_UNMAPPED && w->state != WSTATE_DESTROYING && w->state != WSTATE_UNMAPPING) {
+			if (size_changed) {
 				win_on_win_size_change(ps, w);
 
 				win_update_bounding_shape(ps, w);
 
-				win_clear_flags(w, WIN_FLAGS_PIXMAP_STALE);
-				win_process_image_flags(ps, w);
+        if (w->state != WSTATE_DESTROYING) {
+          win_clear_flags(w, WIN_FLAGS_PIXMAP_STALE);
+        }
+
+        win_process_image_flags(ps, w);
 			}
+
 			// Mark new window region with damage
 			if (was_painted && geometry_changed) {
 				add_damage_from_win(ps, w);
@@ -1123,8 +1133,9 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 		}
 	}
 
-	if (animation_running)
+	if (animation_running) {
 		ps->animation_time = now;
+  }
 
 	// Opacity will not change, from now on.
 	rc_region_t *last_reg_ignore = rc_region_new();
