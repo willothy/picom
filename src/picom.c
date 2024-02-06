@@ -107,6 +107,13 @@ const char *const BACKEND_STRS[] = {[BKEND_XRENDER] = "xrender",
 /// XXX Limit what xerror can access by not having this pointer
 session_t *ps_g = NULL;
 
+/// Pointer to the global Lua state. TODO: move this to session_t.
+lua_State *ps_lua = NULL;
+
+lua_State *get_lua_state() {
+  return ps_lua;
+}
+
 void set_root_flags(session_t *ps, uint64_t flags) {
   log_debug("Setting root flags: %" PRIu64, flags);
   ps->root_flags |= flags;
@@ -2103,6 +2110,36 @@ static bool load_shader_source_for_condition(const c2_lptr_t *cond, void *data) 
   return load_shader_source(data, c2_list_get_data(cond));
 }
 
+/// Switch to real-time scheduling policy (SCHED_RR) if possible
+///
+/// Make picom realtime to reduce latency, and make rendering times more predictable to
+/// help pacing.
+///
+/// This requires the user to set up permissions for the real-time scheduling. e.g. by
+/// setting `ulimit -r`, or giving us the CAP_SYS_NICE capability.
+void set_rr_scheduling(void) {
+  int priority = sched_get_priority_min(SCHED_RR);
+
+  int ret;
+  struct sched_param param;
+
+  ret = sched_getparam(0, &param);
+  if (ret != 0) {
+    log_debug("Failed to get old scheduling priority");
+    return;
+  }
+
+  param.sched_priority = priority;
+  ret = sched_setscheduler(0, SCHED_RR, &param);
+  if (ret != 0) {
+    log_info("Failed to set real-time scheduling priority to %d. Consider "
+             "giving picom the CAP_SYS_NICE capability",
+             priority);
+    return;
+  }
+  log_info("Set real-time scheduling priority to %d", priority);
+}
+
 /**
  * Initialize a session.
  *
@@ -2703,36 +2740,6 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
 err:
   free(ps);
   return NULL;
-}
-
-/// Switch to real-time scheduling policy (SCHED_RR) if possible
-///
-/// Make picom realtime to reduce latency, and make rendering times more predictable to
-/// help pacing.
-///
-/// This requires the user to set up permissions for the real-time scheduling. e.g. by
-/// setting `ulimit -r`, or giving us the CAP_SYS_NICE capability.
-void set_rr_scheduling(void) {
-  int priority = sched_get_priority_min(SCHED_RR);
-
-  int ret;
-  struct sched_param param;
-
-  ret = sched_getparam(0, &param);
-  if (ret != 0) {
-    log_debug("Failed to get old scheduling priority");
-    return;
-  }
-
-  param.sched_priority = priority;
-  ret = sched_setscheduler(0, SCHED_RR, &param);
-  if (ret != 0) {
-    log_info("Failed to set real-time scheduling priority to %d. Consider "
-             "giving picom the CAP_SYS_NICE capability",
-             priority);
-    return;
-  }
-  log_info("Set real-time scheduling priority to %d", priority);
 }
 
 /**

@@ -3,6 +3,8 @@ project('picom', 'c', version: '11',
 
 cc = meson.get_compiler('c')
 
+
+
 # use project version by default
 version = 'v'+meson.project_version()
 

@@ -88,9 +88,16 @@ endif
 
 subdir('backend')
 
-picom = executable('picom', srcs, c_args: cflags,
-  dependencies: [ base_deps, deps, test_h_dep ],
-  install: true, include_directories: picom_inc)
+luajit_dep = dependency('luajit')
+
+picom = executable(
+  'picom', 
+  srcs,
+  c_args: cflags,
+  dependencies: [ base_deps, deps, test_h_dep, luajit_dep ],
+  install: true,
+  include_directories: picom_inc
+)
 
 if get_option('unittest')
 	test('picom unittest', picom, args: [ '--unittest' ])

@@ -25,6 +25,11 @@
 #include "win.h"
 #include "x.h"
 
+#include <lua.h>
+#include <luaconf.h>
+#include <luajit.h>
+#include <lualib.h>
+
 enum root_flags {
   ROOT_FLAGS_SCREEN_CHANGE = 1,        // Received RandR screen change notify, we
                                        // use this to track refresh rate changes
@@ -33,6 +38,9 @@ enum root_flags {
 
 // == Functions ==
 // TODO(yshui) move static inline functions that are only used in picom.c, into picom.c
+
+// Retrieve a handle to the global Lua state.
+lua_State *get_lua_state();
 
 void add_damage(session_t *ps, const region_t *damage);
 
