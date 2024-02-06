@@ -6,14 +6,23 @@ picom
 > However, it is pretty cool and has functioning animations.
 > Docs have not been updated at all by me.
 
+While I have maintained the git history of Picom (Compton, XCompMgr, etc.), I will be
+making tons of breaking changes and have no intent of upstreaming any of this.
+
+I have already changed the formatting to a point that any merge would be nearly impossible,
+as the old formatting was inconsistent and difficult for me to work with.
+
 Changes I (willothy) have made:
 
 - Ported some fixes over from [compfy](https://github.com/allusive-dev/compfy)
 - Hacked around to fix some animation issues
 
+Changes that I am working on:
+
+- Embedding LuaJIT for configuration, and potentially scripting
+
 Changes I am considering:
 
-- Moving configuration to JSON or Lua (likely Lua, because I could also use it to do simple stuff over FFI)
 - Moving to either Cmake or the Zig build system (unlikely, I hate messing with C build systems)
 - Porting some of this to Zig, Go or Rust (if I have time, this could be fun - probably would use Rust)
 
