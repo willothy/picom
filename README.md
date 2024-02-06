@@ -4,6 +4,18 @@ picom
 > NOTE (willothy) <br>
 > This is maintained for personal use only, and I make no guarantees about its stability.
 > However, it is pretty cool and has functioning animations.
+> Docs have not been updated at all by me.
+
+Changes I (willothy) have made:
+
+- Ported some fixes over from [compfy](https://github.com/allusive-dev/compfy)
+- Hacked around to fix some animation issues
+
+Changes I am considering:
+
+- Moving configuration to JSON or Lua (likely Lua, because I could also use it to do simple stuff over FFI)
+- Moving to either Cmake or the Zig build system (unlikely, I hate messing with C build systems)
+- Porting some of this to Zig, Go or Rust (if I have time, this could be fun - probably would use Rust)
 
 __picom__ is a compositor for X, and a [fork of Compton](History.md).
 
@@ -21,30 +33,30 @@ See [Releases](https://github.com/yshui/picom/releases)
 
 Assuming you already have all the usual building tools installed (e.g. gcc, python, meson, ninja, etc.), you still need:
 
-* libx11
-* libx11-xcb
-* libXext
-* xproto
-* xcb
-* xcb-util
-* xcb-damage
-* xcb-dpms
-* xcb-xfixes
-* xcb-shape
-* xcb-renderutil
-* xcb-render
-* xcb-randr
-* xcb-composite
-* xcb-image
-* xcb-present
-* xcb-glx
-* pixman
-* libdbus (optional, disable with the `-Ddbus=false` meson configure flag)
-* libconfig (optional, disable with the `-Dconfig_file=false` meson configure flag)
-* libGL, libEGL (optional, disable with the `-Dopengl=false` meson configure flag)
-* libpcre2 (optional, disable with the `-Dregex=false` meson configure flag)
-* libev
-* uthash
+- libx11
+- libx11-xcb
+- libXext
+- xproto
+- xcb
+- xcb-util
+- xcb-damage
+- xcb-dpms
+- xcb-xfixes
+- xcb-shape
+- xcb-renderutil
+- xcb-render
+- xcb-randr
+- xcb-composite
+- xcb-image
+- xcb-present
+- xcb-glx
+- pixman
+- libdbus (optional, disable with the `-Ddbus=false` meson configure flag)
+- libconfig (optional, disable with the `-Dconfig_file=false` meson configure flag)
+- libGL, libEGL (optional, disable with the `-Dopengl=false` meson configure flag)
+- libpcre2 (optional, disable with the `-Dregex=false` meson configure flag)
+- libev
+- uthash
 
 On Debian based distributions (e.g. Ubuntu), the needed packages are
 
@@ -87,7 +99,8 @@ ninja -C build
 ### To install
 
 #### AUR (arch)
-* picom-ftlabs-git
+
+- picom-ftlabs-git
 Thanks to @Fxzzi for maintaining the package.
 
 ``` bash
