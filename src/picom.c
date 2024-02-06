@@ -2963,6 +2963,15 @@ int main(int argc, char **argv) {
     }
   }
 
+  lua_State *L = luaL_newstate();
+  if (!L) {
+    log_fatal("Failed to initialize Lua state");
+    return 1;
+  }
+  luaL_openlibs(L);
+
+  ps_lua = L;
+
   int exit_code;
   char *config_file = NULL;
   bool all_xerrors = false, need_fork = false;

@@ -25,8 +25,9 @@
 #include "win.h"
 #include "x.h"
 
+// #include <luaconf.h>
+#include <lauxlib.h>
 #include <lua.h>
-#include <luaconf.h>
 #include <luajit.h>
 #include <lualib.h>
 
