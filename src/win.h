@@ -108,6 +108,8 @@ enum {
   ANIM_FADE = (1 << 3),
 };
 
+void init_animation(session_t *ps, struct managed_win *w);
+
 struct managed_win {
   struct win base;
   /// backend data attached to this window. Only available when

@@ -19,6 +19,7 @@
 #include "region.h"
 #include "utils.h"
 #include "win.h"
+#include "win_defs.h"
 #include "x.h"
 
 /// Event handling with X is complicated. Handling events with other events possibly
@@ -566,6 +567,48 @@ static inline void ev_property_notify(session_t *ps, xcb_property_notify_event_t
         win_set_flags(w, WIN_FLAGS_FACTOR_CHANGED);
       }
       break;
+    }
+  }
+
+  static const char *state_names[] = {
+      [WSTATE_UNMAPPING] = "WSTATE_UNMAPPING", [WSTATE_DESTROYING] = "WSTATE_DESTROYING",
+      [WSTATE_MAPPING] = "WSTATE_MAPPING",     [WSTATE_FADING] = "WSTATE_FADING",
+      [WSTATE_MAPPED] = "WSTATE_MAPPED",       [WSTATE_UNMAPPED] = "WSTATE_UNMAPPED",
+  };
+
+  if (ps->atoms->a_NET_WM_STATE == ev->atom) {
+    struct managed_win *w = find_managed_win(ps, ev->window);
+    if (!w) {
+      w = find_toplevel(ps, ev->window);
+    }
+    if (w) {
+      log_info("%d: %s\n", w->base.id, state_names[w->state]);
+      uint32_t mask = w->dwm_mask;
+      if (w->state == WSTATE_MAPPED) {
+        w->dwm_mask = ANIM_UNMAP;
+      } else if (w->state == WSTATE_UNMAPPED) {
+        w->dwm_mask = 0;
+      }
+      w->dwm_mask = ANIM_UNMAP;
+      init_animation(ps, w);
+      w->dwm_mask = mask;
+      double x_dist = w->animation_dest_center_x - w->animation_center_x;
+      double y_dist = w->animation_dest_center_y - w->animation_center_y;
+      double w_dist = w->animation_dest_w - w->animation_w;
+      double h_dist = w->animation_dest_h - w->animation_h;
+      w->animation_inv_og_distance =
+          1.0 / sqrt(x_dist * x_dist + y_dist * y_dist + w_dist * w_dist + h_dist * h_dist);
+
+      if (isinf(w->animation_inv_og_distance)) {
+        w->animation_inv_og_distance = 0;
+      }
+
+      w->animation_progress = 0.0;
+
+      if (w->old_win_image) {
+        ps->backend_data->ops->release_image(ps->backend_data, w->old_win_image);
+        w->old_win_image = NULL;
+      }
     }
   }
 }

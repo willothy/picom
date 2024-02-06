@@ -471,7 +471,7 @@ static void win_update_properties(session_t *ps, struct managed_win *w) {
   win_clear_all_properties_stale(w);
 }
 
-static void init_animation(session_t *ps, struct managed_win *w) {
+void init_animation(session_t *ps, struct managed_win *w) {
   CLEAR_MASK(w->animation_is_tag)
   static int32_t randr_mon_center_x, randr_mon_center_y;
   if (w->randr_monitor != -1) {
@@ -691,6 +691,7 @@ void win_process_update_flags(session_t *ps, struct managed_win *w) {
                abs(w->pending_g.y - w->g.y) >= w->pending_g.height)
         w->dwm_mask = ANIM_NEXT_TAG;
 
+      // if (!was_visible || w->dwm_mask) {
       if (!was_visible || w->dwm_mask) {
 
         // Set window-open animation
@@ -705,7 +706,6 @@ void win_process_update_flags(session_t *ps, struct managed_win *w) {
           w->g.width = (uint16_t)round(w->animation_w);
           w->g.height = (uint16_t)round(w->animation_h);
         }
-
       } else {
         w->animation_is_tag = ANIM_IN_TAG;
         w->animation_dest_center_x = w->pending_g.x + w->pending_g.width * 0.5;
@@ -2732,9 +2732,7 @@ bool win_check_fade_finished(session_t *ps, struct managed_win *w) {
     assert(w->opacity_target == w->opacity);
     return false;
   }
-  if (w->opacity == w->opacity_target
-      // && (w->animation_progress == 0.0 || w->animation_progress >= 0.999)
-  ) {
+  if (w->opacity == w->opacity_target) {
     switch (w->state) {
     case WSTATE_UNMAPPING: unmap_win_finish(ps, w); return false;
     case WSTATE_DESTROYING: destroy_win_finish(ps, &w->base); return true;
