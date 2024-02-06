@@ -66,11 +66,13 @@ static int win_update_name(session_t *ps, struct managed_win *w);
  */
 static void win_update_opacity_prop(session_t *ps, struct managed_win *w);
 static void win_update_opacity_target(session_t *ps, struct managed_win *w);
+
 /**
  * Retrieve frame extents from a window.
  */
 static void
 win_update_frame_extents(session_t *ps, struct managed_win *w, xcb_window_t client);
+
 static void win_update_prop_shadow_raw(session_t *ps, struct managed_win *w);
 static void win_update_prop_shadow(session_t *ps, struct managed_win *w);
 /**
@@ -483,10 +485,10 @@ static void init_animation(session_t *ps, struct managed_win *w) {
 
   animation = ps->o.animation_for_open_window;
 
-  if (w->window_type != WINTYPE_TOOLTIP &&
-      wid_has_prop(ps, w->client_win, ps->atoms->aWM_TRANSIENT_FOR)) {
-    animation = ps->o.animation_for_transient_window;
-  }
+  // if (w->window_type != WINTYPE_TOOLTIP &&
+  //     wid_has_prop(ps, w->client_win, ps->atoms->aWM_TRANSIENT_FOR)) {
+  //   animation = ps->o.animation_for_transient_window;
+  // }
 
   if (ps->o.wintype_option[w->window_type].animation != OPEN_WINDOW_ANIMATION_INVALID &&
       !w->dwm_mask) {
@@ -2678,7 +2680,7 @@ void unmap_win_start(session_t *ps, struct managed_win *w) {
   w->opacity_target = win_calc_opacity_target(ps, w);
 
   if (ps->o.animations && ps->o.animation_for_unmap_window != OPEN_WINDOW_ANIMATION_NONE &&
-      ps->o.wintype_option[w->window_type].animation) {
+      ps->o.wintype_option[w->window_type].animation != OPEN_WINDOW_ANIMATION_NONE) {
     uint32_t mask = w->dwm_mask;
     w->dwm_mask = ANIM_UNMAP;
     init_animation(ps, w);
@@ -2730,8 +2732,9 @@ bool win_check_fade_finished(session_t *ps, struct managed_win *w) {
     assert(w->opacity_target == w->opacity);
     return false;
   }
-  if (w->opacity == w->opacity_target &&
-      (w->animation_progress == 0.0 || w->animation_progress >= 0.999)) {
+  if (w->opacity == w->opacity_target
+      // && (w->animation_progress == 0.0 || w->animation_progress >= 0.999)
+  ) {
     switch (w->state) {
     case WSTATE_UNMAPPING: unmap_win_finish(ps, w); return false;
     case WSTATE_DESTROYING: destroy_win_finish(ps, &w->base); return true;

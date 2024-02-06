@@ -2600,6 +2600,7 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
   ev_io_init(&ps->xiow, x_event_callback, ConnectionNumber(ps->c.dpy), EV_READ);
   ev_io_start(ps->loop, &ps->xiow);
   ev_init(&ps->unredir_timer, tmout_unredir_callback);
+
   ev_init(&ps->draw_timer, draw_callback);
 
   ev_init(&ps->fade_timer, fade_timer_callback);
