@@ -485,7 +485,7 @@ static void init_animation(session_t *ps, struct managed_win *w) {
 	static double *anim_x, *anim_y, *anim_w, *anim_h;
 	enum open_window_animation animation;
 
-	
+
 	animation = ps->o.animation_for_open_window;
 
 	if (w->window_type != WINTYPE_TOOLTIP &&
@@ -501,7 +501,7 @@ static void init_animation(session_t *ps, struct managed_win *w) {
 	anim_x = &w->animation_center_x, anim_y = &w->animation_center_y;
 	anim_w = &w->animation_w, anim_h = &w->animation_h;
 
-        if (w->dwm_mask & ANIM_PREV_TAG) {
+  if (w->dwm_mask & ANIM_PREV_TAG) {
 		animation = ps->o.animation_for_prev_tag;
 
 		if (ps->o.enable_fading_prev_tag) {
@@ -527,7 +527,7 @@ static void init_animation(session_t *ps, struct managed_win *w) {
 		revert:
 		anim_x = &w->animation_dest_center_x, anim_y = &w->animation_dest_center_y;
 		anim_w = &w->animation_dest_w, anim_h = &w->animation_dest_h;
-        }
+  }
 
 	double angle;
 	switch (animation) {
@@ -2699,9 +2699,15 @@ void unmap_win_start(session_t *ps, struct managed_win *w) {
 	w->opacity_target_old = fmax(w->opacity_target, w->opacity_target_old);
 	w->opacity_target = win_calc_opacity_target(ps, w);
 
-    if (ps->o.animations && ps->o.animation_for_unmap_window != OPEN_WINDOW_ANIMATION_NONE && ps->o.wintype_option[w->window_type].animation) {
+  if (
+    ps->o.animations
+    && ps->o.animation_for_unmap_window != OPEN_WINDOW_ANIMATION_NONE
+    && ps->o.wintype_option[w->window_type].animation
+  ) {
+    uint32_t mask = w->dwm_mask;
 		w->dwm_mask = ANIM_UNMAP;
 		init_animation(ps, w);
+    w->dwm_mask = mask;
 
 		double x_dist = w->animation_dest_center_x - w->animation_center_x;
 		double y_dist = w->animation_dest_center_y - w->animation_center_y;
@@ -2711,8 +2717,9 @@ void unmap_win_start(session_t *ps, struct managed_win *w) {
 			1.0 / sqrt(x_dist * x_dist + y_dist * y_dist +
 						w_dist * w_dist + h_dist * h_dist);
 
-		if (isinf(w->animation_inv_og_distance))
+		if (isinf(w->animation_inv_og_distance)) {
 			w->animation_inv_og_distance = 0;
+    }
 
 		w->animation_progress = 0.0;
 
@@ -2750,7 +2757,7 @@ bool win_check_fade_finished(session_t *ps, struct managed_win *w) {
 		assert(w->opacity_target == w->opacity);
 		return false;
 	}
-	if (w->opacity == w->opacity_target) {
+	if (w->opacity == w->opacity_target && (w->animation_progress == 0.0 || w->animation_progress >= 0.999)) {
 		switch (w->state) {
 		case WSTATE_UNMAPPING: unmap_win_finish(ps, w); return false;
 		case WSTATE_DESTROYING: destroy_win_finish(ps, &w->base); return true;

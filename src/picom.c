@@ -917,8 +917,10 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 		// [pre]processing. This is because it changes the window's geometry.
 		if (ps->o.animations &&
 			!isnan(w->animation_progress) && w->animation_progress != 1.0 &&
-			ps->o.wintype_option[w->window_type].animation != 0 &&
-			win_is_mapped_in_x(w))
+			ps->o.wintype_option[w->window_type].animation != 0
+      // NOTE: (willothy): commenting this out made the animations work properly
+      // && win_is_mapped_in_x(w)
+    )
 		{
 			double neg_displacement_x =
 				w->animation_dest_center_x - w->animation_center_x;
@@ -1054,10 +1056,7 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
 			if (size_changed && w->state != WSTATE_UNMAPPED && w->state != WSTATE_DESTROYING && w->state != WSTATE_UNMAPPING) {
 				win_on_win_size_change(ps, w);
 
-				pixman_region32_clear(&w->bounding_shape);
-				pixman_region32_fini(&w->bounding_shape);
-				pixman_region32_init_rect(&w->bounding_shape, 0, 0,
-				                          (uint)w->widthb, (uint)w->heightb);
+				win_update_bounding_shape(ps, w);
 
 				win_clear_flags(w, WIN_FLAGS_PIXMAP_STALE);
 				win_process_image_flags(ps, w);
