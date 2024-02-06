@@ -1,9 +1,9 @@
 picom
 =====
 
-[![circleci](https://circleci.com/gh/yshui/picom.svg?style=shield)](https://circleci.com/gh/yshui/picom)
-[![codecov](https://codecov.io/gh/yshui/picom/branch/next/graph/badge.svg?token=NRSegi0Gze)](https://codecov.io/gh/yshui/picom)
-[![chat on discord](https://img.shields.io/discord/1106224720833159198?logo=discord)](https://discord.gg/SY5JJzPgME)
+> NOTE (willothy) <br>
+> This is maintained for personal use only, and I make no guarantees about its stability.
+> However, it is pretty cool and has functioning animations.
 
 __picom__ is a compositor for X, and a [fork of Compton](History.md).
 
@@ -63,8 +63,8 @@ To build the documents, you need `asciidoc`
 ### To build
 
 ```bash
-$ meson setup --buildtype=release build
-$ ninja -C build
+meson setup --buildtype=release build
+ninja -C build
 ```
 
 Built binary can be found in `build/src`
@@ -74,29 +74,30 @@ If you have libraries and/or headers installed at non-default location (e.g. und
 You can do that by setting the `CPPFLAGS` and `LDFLAGS` environment variables when running `meson`. Like this:
 
 ```bash
-$ LDFLAGS="-L/path/to/libraries" CPPFLAGS="-I/path/to/headers" meson setup --buildtype=release build
+LDFLAGS="-L/path/to/libraries" CPPFLAGS="-I/path/to/headers" meson setup --buildtype=release build
 ```
 
 As an example, on FreeBSD, you might have to run meson with:
+
 ```bash
-$ LDFLAGS="-L/usr/local/lib" CPPFLAGS="-I/usr/local/include" meson setup --buildtype=release build
-$ ninja -C build
+LDFLAGS="-L/usr/local/lib" CPPFLAGS="-I/usr/local/include" meson setup --buildtype=release build
+ninja -C build
 ```
 
 ### To install
 
 #### AUR (arch)
-- picom-ftlabs-git
+* picom-ftlabs-git
 Thanks to @Fxzzi for maintaining the package.
 
-
 ``` bash
-$ ninja -C build install
+ninja -C build install
 ```
 
 Default install prefix is `/usr/local`, you can change it with `meson configure -Dprefix=<path> build`
 
 ## Running
+
 To launch with all animations as a background process you can use:
 `picom --animations -b`
 
