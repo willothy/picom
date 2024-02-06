@@ -24,6 +24,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "kernel.h"
+#include "lauxlib.h"
 #include "log.h"
 #include "region.h"
 #include "string_utils.h"
@@ -32,6 +33,7 @@
 #include "win.h"
 
 #include "config.h"
+#include "picom.h"
 
 const char *xdg_config_home(void) {
   char *xdgh = getenv("XDG_CONFIG_HOME");
@@ -123,6 +125,38 @@ TEST_CASE(xdg_config_dirs) {
     setenv("XDG_CONFIG_DIRS", old_var, 1);
     free(old_var);
   }
+}
+
+/**
+ * Check if a file exists.
+ * @param path the path to the file
+ * @return true if the file exists and is a regular file, false otherwise
+ */
+static bool file_exists(const char *path) {
+  struct stat st;
+  return stat(path, &st) == 0 && (st.st_mode & S_IFREG);
+}
+
+static const char *config_paths[] = {
+    "/picom.lua",
+    "/picom/picom.lua",
+};
+
+/**
+ * Find a file in the list of config dirs.
+ */
+static char *locate_config_file(const char *dir) {
+  if (!dir) {
+    return NULL;
+  }
+  for (size_t i = 0; i < ARR_SIZE(config_paths); i++) {
+    char *path = mstrjoin(dir, config_paths[i]);
+    if (file_exists(path)) {
+      return path;
+    }
+    free(path);
+  }
+  return NULL;
 }
 
 /**
@@ -841,8 +875,22 @@ enum open_window_animation parse_open_window_animation(const char *src) {
   return OPEN_WINDOW_ANIMATION_INVALID;
 }
 
-char *parse_config(options_t *opt, const char *config_file, bool *shadow_enable,
-                   bool *fading_enable, bool *hasneg, win_option_mask_t *winopt_mask) {
+/**
+ * Check if a Lua error occurred.
+ * @param L the Lua state
+ * @param rv the return value of a Lua function
+ * @param[out] msg return the error message
+ * @return true if an error occurred, false otherwise
+ */
+bool pilua_check(lua_State *L, int rv, char **msg) {
+  if (rv != LUA_OK) {
+    *msg = strdup(lua_tostring(L, -1));
+    return true;
+  }
+  return false;
+}
+
+bool parse_config(options_t *opt, const char *config, config_result_t *result) {
   // clang-format off
 	*opt = (struct options){
 	    .backend = BKEND_XRENDER,
@@ -934,17 +982,54 @@ char *parse_config(options_t *opt, const char *config_file, bool *shadow_enable,
 	};
   // clang-format on
 
-  char *ret = NULL;
-#ifdef CONFIG_LIBCONFIG
-  ret = parse_config_libconfig(opt, config_file, shadow_enable, fading_enable, hasneg,
-                               winopt_mask);
-#else
-  (void)config_file;
-  (void)shadow_enable;
-  (void)fading_enable;
-  (void)hasneg;
-  (void)winopt_mask;
-#endif
+  lua_State *L = get_lua_state();
+
+  char *config_path = NULL;
+
+  if (config) {
+    config_path = strdup(config);
+  } else {
+    // First search for config file in user config directory
+    const char *config_home = xdg_config_home();
+    if (config_home) {
+      config_path = locate_config_file(config_home);
+    }
+    free((void *)config_home);
+  }
+
+  if (!config_path) {
+    // Fall back to config file in system config directory
+    char **config_dirs = xdg_config_dirs();
+    for (int i = 0; config_dirs[i] != NULL; i++) {
+      config_path = locate_config_file(config_dirs[i]);
+      if (config_path) {
+        break;
+      }
+    }
+    free(config_dirs);
+  }
+
+  if (!config_path) {
+    log_error("Failed to locate config file");
+    return true;
+  }
+
+  char *err = NULL;
+  if (pilua_check(L, luaL_dofile(L, config_path), &err)) {
+    log_error("Failed to load config file %s: %s", config_path, err);
+    free(err);
+    free(config_path);
+    return false;
+  }
+
+  free(config_path);
+
+  // defaults for now
+  result->fading_enable = true;
+  result->shadow_enable = true;
+
+  // parse_config_libconfig(opt, config, shadows, fading, hasneg, winopt_mask);
+
   parse_debug_options(&opt->debug_options);
-  return ret;
+  return true;
 }

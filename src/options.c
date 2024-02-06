@@ -337,7 +337,6 @@ bool get_early_config(int argc, char *const *argv, char **config_file, bool *all
     } else if (o == 'h') {
       usage(argv[0], 0);
       return true;
-
     } else if (o == 'b') {
       *fork = true;
     } else if (o == 314) {
@@ -367,8 +366,7 @@ err:
 /**
  * Process arguments and configuration files.
  */
-bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
-             bool fading_enable, bool conv_kern_hasneg, win_option_mask_t *winopt_mask) {
+bool get_cfg(options_t *opt, int argc, char *const *argv, config_result_t *conf) {
 
   int o = 0, longopt_idx = -1;
 
@@ -403,7 +401,7 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
     }                                                                                    \
     break
 
-    // clang-format off
+      // clang-format off
 		// Short options
 		case 318:
 		case 'h':
@@ -419,20 +417,20 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
 		P_CASEINT('D', fade_delta);
 		case 'I': opt->fade_in_step = normalize_d(atof(optarg)); break;
 		case 'O': opt->fade_out_step = normalize_d(atof(optarg)); break;
-		case 'c': shadow_enable = true; break;
+		case 'c': conf->shadow_enable = true; break;
 		case 'm':;
 			log_warn("--menu-opacity is deprecated, and will be removed."
 			         "Please use the wintype option `opacity` of `popup_menu`"
 			         "and `dropdown_menu` instead.");
 			double tmp;
 			tmp = normalize_d(atof(optarg));
-			winopt_mask[WINTYPE_DROPDOWN_MENU].opacity = true;
-			winopt_mask[WINTYPE_POPUP_MENU].opacity = true;
+			conf->winopt_mask[WINTYPE_DROPDOWN_MENU].opacity = true;
+			conf->winopt_mask[WINTYPE_POPUP_MENU].opacity = true;
 			opt->wintype_option[WINTYPE_POPUP_MENU].opacity = tmp;
 			opt->wintype_option[WINTYPE_DROPDOWN_MENU].opacity = tmp;
 			break;
 		case 'f':
-			fading_enable = true;
+			conf->fading_enable = true;
 			break;
 		P_CASEINT('r', shadow_radius);
 		case 'o':
@@ -615,7 +613,7 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
 			break;
 		case 301:
 			// --blur-kern
-			opt->blur_kerns = parse_blur_kern_lst(optarg, &conv_kern_hasneg,
+			opt->blur_kerns = parse_blur_kern_lst(optarg, &conf->kernel_hasneg,
 			                                      &opt->blur_kernel_count);
 			if (!opt->blur_kerns) {
 				exit(1);
@@ -900,7 +898,7 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
   }
 
   // Apply default wintype options that are dependent on global options
-  set_default_winopts(opt, winopt_mask, shadow_enable, fading_enable,
+  set_default_winopts(opt, conf->winopt_mask, conf->shadow_enable, conf->fading_enable,
                       opt->blur_method != BLUR_METHOD_NONE);
 
   // Other variables determined by options
@@ -913,7 +911,7 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
   // Fill default blur kernel
   if (opt->blur_method == BLUR_METHOD_KERNEL && (!opt->blur_kerns || !opt->blur_kerns[0])) {
     opt->blur_kerns =
-        parse_blur_kern_lst("3x3box", &conv_kern_hasneg, &opt->blur_kernel_count);
+        parse_blur_kern_lst("3x3box", &conf->kernel_hasneg, &opt->blur_kernel_count);
     CHECK(opt->blur_kerns);
     CHECK(opt->blur_kernel_count);
   }
@@ -940,7 +938,7 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
     log_warn("Negative --resize-damage will not work correctly.");
   }
 
-  if (opt->backend == BKEND_XRENDER && conv_kern_hasneg) {
+  if (opt->backend == BKEND_XRENDER && conf->kernel_hasneg) {
     log_warn("A convolution kernel with negative values may not work "
              "properly under X Render backend.");
   }

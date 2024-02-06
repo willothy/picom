@@ -378,12 +378,23 @@ parse_config_libconfig(options_t *, const char *config_file, bool *shadow_enable
 
 void set_default_winopts(options_t *, win_option_mask_t *, bool shadow_enable,
                          bool fading_enable, bool blur_enable);
-/// Parse a configuration file is that is enabled, also initialize the winopt_mask with
-/// default values
-/// Outputs and returns:
-///   same as parse_config_libconfig
-char *parse_config(options_t *, const char *config_file, bool *shadow_enable,
-                   bool *fading_enable, bool *hasneg, win_option_mask_t *winopt_mask);
+
+typedef struct {
+  bool shadow_enable;
+  bool fading_enable;
+  bool kernel_hasneg;
+  win_option_mask_t winopt_mask[NUM_WINTYPES];
+} config_result_t;
+
+/* Parse a configuration file is that is enabled, also initialize the winopt_mask with
+ * default values.
+ *
+ * @param opt the options to fill
+ * @param config_file the configuration file to parse
+ * @return true if the configuration file was loaded successfully, false otherwise
+ *
+ */
+bool parse_config(options_t *opt, const char *config, config_result_t *result);
 
 /**
  * Parse a backend option argument.

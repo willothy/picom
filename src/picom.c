@@ -2347,18 +2347,20 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
   }
 
   // Parse configuration file
-  win_option_mask_t winopt_mask[NUM_WINTYPES] = {{0}};
-  bool shadow_enabled = false, fading_enable = false, hasneg = false;
-  char *config_file_to_free = NULL;
-  config_file = config_file_to_free = parse_config(&ps->o, config_file, &shadow_enabled,
-                                                   &fading_enable, &hasneg, winopt_mask);
-
-  if (IS_ERR(config_file_to_free)) {
+  config_result_t config_res = {
+      .fading_enable = true,
+      .shadow_enable = true,
+      .kernel_hasneg = false,
+      .winopt_mask = {{0}},
+  };
+  if (!parse_config(&ps->o, config_file, &config_res)) {
+    log_fatal("Failed to get configuration, usually mean you have specified "
+              "invalid options.");
     return NULL;
   }
 
   // Parse all of the rest command line options
-  if (!get_cfg(&ps->o, argc, argv, shadow_enabled, fading_enable, hasneg, winopt_mask)) {
+  if (!get_cfg(&ps->o, argc, argv, &config_res)) {
     log_fatal("Failed to get configuration, usually mean you have specified "
               "invalid options.");
     return NULL;
@@ -2582,7 +2584,6 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
 
   if (ps->o.print_diagnostics) {
     print_diagnostics(ps, config_file, compositor_running);
-    free(config_file_to_free);
     exit(0);
   }
 
@@ -2590,8 +2591,6 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
   if (ps->file_watch_handle && config_file) {
     file_watch_add(ps->file_watch_handle, config_file, config_file_change_cb, ps);
   }
-
-  free(config_file_to_free);
 
   if (bkend_use_glx(ps) && ps->o.legacy_backends) {
     auto gl_logger = gl_string_marker_logger_new();
