@@ -23,11 +23,11 @@
 #pragma GCC diagnostic error "-Wunused-parameter"
 
 struct picom_option {
-	const char *long_name;
-	int has_arg;
-	int val;
-	const char *arg_name;
-	const char *help;
+  const char *long_name;
+  int has_arg;
+  int val;
+  const char *arg_name;
+  const char *help;
 };
 
 // clang-format off
@@ -197,122 +197,121 @@ static const struct picom_option picom_options[] = {
 // clang-format on
 
 static void setup_longopts(void) {
-	auto opts = ccalloc(ARR_SIZE(picom_options) + 1, struct option);
-	for (size_t i = 0; i < ARR_SIZE(picom_options); i++) {
-		opts[i].name = picom_options[i].long_name;
-		opts[i].has_arg = picom_options[i].has_arg;
-		opts[i].flag = NULL;
-		opts[i].val = picom_options[i].val;
-	}
-	longopts = opts;
+  auto opts = ccalloc(ARR_SIZE(picom_options) + 1, struct option);
+  for (size_t i = 0; i < ARR_SIZE(picom_options); i++) {
+    opts[i].name = picom_options[i].long_name;
+    opts[i].has_arg = picom_options[i].has_arg;
+    opts[i].flag = NULL;
+    opts[i].val = picom_options[i].val;
+  }
+  longopts = opts;
 }
 
 void print_help(const char *help, size_t indent, size_t curr_indent, size_t line_wrap,
                 FILE *f) {
-	if (curr_indent > indent) {
-		fputs("\n", f);
-		curr_indent = 0;
-	}
+  if (curr_indent > indent) {
+    fputs("\n", f);
+    curr_indent = 0;
+  }
 
-	if (line_wrap - indent <= 1) {
-		line_wrap = indent + 2;
-	}
+  if (line_wrap - indent <= 1) {
+    line_wrap = indent + 2;
+  }
 
-	size_t pos = 0;
-	size_t len = strlen(help);
-	while (pos < len) {
-		fprintf(f, "%*s", (int)(indent - curr_indent), "");
-		curr_indent = 0;
-		size_t towrite = line_wrap - indent;
-		while (help[pos] == ' ') {
-			pos++;
-		}
-		if (pos + towrite > len) {
-			towrite = len - pos;
-			fwrite(help + pos, 1, towrite, f);
-		} else {
-			auto space_break = towrite;
-			while (space_break > 0 && help[pos + space_break - 1] != ' ') {
-				space_break--;
-			}
+  size_t pos = 0;
+  size_t len = strlen(help);
+  while (pos < len) {
+    fprintf(f, "%*s", (int)(indent - curr_indent), "");
+    curr_indent = 0;
+    size_t towrite = line_wrap - indent;
+    while (help[pos] == ' ') {
+      pos++;
+    }
+    if (pos + towrite > len) {
+      towrite = len - pos;
+      fwrite(help + pos, 1, towrite, f);
+    } else {
+      auto space_break = towrite;
+      while (space_break > 0 && help[pos + space_break - 1] != ' ') {
+        space_break--;
+      }
 
-			bool print_hyphen = false;
-			if (space_break == 0) {
-				print_hyphen = true;
-				towrite--;
-			} else {
-				towrite = space_break;
-			}
+      bool print_hyphen = false;
+      if (space_break == 0) {
+        print_hyphen = true;
+        towrite--;
+      } else {
+        towrite = space_break;
+      }
 
-			fwrite(help + pos, 1, towrite, f);
+      fwrite(help + pos, 1, towrite, f);
 
-			if (print_hyphen) {
-				fputs("-", f);
-			}
-		}
+      if (print_hyphen) {
+        fputs("-", f);
+      }
+    }
 
-		fputs("\n", f);
-		pos += towrite;
-	}
+    fputs("\n", f);
+    pos += towrite;
+  }
 }
 
 /**
  * Print usage text.
  */
 static void usage(const char *argv0, int ret) {
-	FILE *f = (ret ? stderr : stdout);
-	fprintf(f, "picom (%s)\n", PICOM_VERSION);
-	fprintf(f, "Standalone X11 compositor\n");
-	fprintf(f, "Please report bugs to https://github.com/yshui/picom\n\n");
+  FILE *f = (ret ? stderr : stdout);
+  fprintf(f, "picom (%s)\n", PICOM_VERSION);
+  fprintf(f, "Standalone X11 compositor\n");
+  fprintf(f, "Please report bugs to https://github.com/yshui/picom\n\n");
 
-	fprintf(f, "Usage: %s [OPTION]...\n\n", argv0);
-	fprintf(f, "OPTIONS:\n");
+  fprintf(f, "Usage: %s [OPTION]...\n\n", argv0);
+  fprintf(f, "OPTIONS:\n");
 
-	int line_wrap = 80;
-	struct winsize window_size = {0};
-	if (ioctl(fileno(f), TIOCGWINSZ, &window_size) != -1) {
-		line_wrap = window_size.ws_col;
-	}
+  int line_wrap = 80;
+  struct winsize window_size = {0};
+  if (ioctl(fileno(f), TIOCGWINSZ, &window_size) != -1) {
+    line_wrap = window_size.ws_col;
+  }
 
-	size_t help_indent = 0;
-	for (size_t i = 0; i < ARR_SIZE(picom_options); i++) {
-		if (picom_options[i].help == NULL) {
-			// Hide options with no help message.
-			continue;
-		}
-		auto option_len = strlen(picom_options[i].long_name) + 2 + 4;
-		if (picom_options[i].arg_name) {
-			option_len += strlen(picom_options[i].arg_name) + 1;
-		}
-		if (option_len > help_indent && option_len < 30) {
-			help_indent = option_len;
-		}
-	}
-	help_indent += 6;
+  size_t help_indent = 0;
+  for (size_t i = 0; i < ARR_SIZE(picom_options); i++) {
+    if (picom_options[i].help == NULL) {
+      // Hide options with no help message.
+      continue;
+    }
+    auto option_len = strlen(picom_options[i].long_name) + 2 + 4;
+    if (picom_options[i].arg_name) {
+      option_len += strlen(picom_options[i].arg_name) + 1;
+    }
+    if (option_len > help_indent && option_len < 30) {
+      help_indent = option_len;
+    }
+  }
+  help_indent += 6;
 
-	for (size_t i = 0; i < ARR_SIZE(picom_options); i++) {
-		if (picom_options[i].help == NULL) {
-			continue;
-		}
-		size_t option_len = 8;
-		fprintf(f, "    ");
-		if ((picom_options[i].val > 'a' && picom_options[i].val < 'z') ||
-		    (picom_options[i].val > 'A' && picom_options[i].val < 'Z')) {
-			fprintf(f, "-%c, ", picom_options[i].val);
-		} else {
-			fprintf(f, "    ");
-		}
-		fprintf(f, "--%s", picom_options[i].long_name);
-		option_len += strlen(picom_options[i].long_name) + 2;
-		if (picom_options[i].arg_name) {
-			fprintf(f, "=%s", picom_options[i].arg_name);
-			option_len += strlen(picom_options[i].arg_name) + 1;
-		}
-		fprintf(f, "  ");
-		option_len += 2;
-		print_help(picom_options[i].help, help_indent, option_len,
-		           (size_t)line_wrap, f);
-	}
+  for (size_t i = 0; i < ARR_SIZE(picom_options); i++) {
+    if (picom_options[i].help == NULL) {
+      continue;
+    }
+    size_t option_len = 8;
+    fprintf(f, "    ");
+    if ((picom_options[i].val > 'a' && picom_options[i].val < 'z') ||
+        (picom_options[i].val > 'A' && picom_options[i].val < 'Z')) {
+      fprintf(f, "-%c, ", picom_options[i].val);
+    } else {
+      fprintf(f, "    ");
+    }
+    fprintf(f, "--%s", picom_options[i].long_name);
+    option_len += strlen(picom_options[i].long_name) + 2;
+    if (picom_options[i].arg_name) {
+      fprintf(f, "=%s", picom_options[i].arg_name);
+      option_len += strlen(picom_options[i].arg_name) + 1;
+    }
+    fprintf(f, "  ");
+    option_len += 2;
+    print_help(picom_options[i].help, help_indent, option_len, (size_t)line_wrap, f);
+  }
 }
 
 static const char *shortopts = "D:I:O:r:o:m:l:t:i:e:hscnfCazGb";
@@ -321,48 +320,48 @@ static const char *shortopts = "D:I:O:r:o:m:l:t:i:e:hscnfCazGb";
 /// Return true if we should quit
 bool get_early_config(int argc, char *const *argv, char **config_file, bool *all_xerrors,
                       bool *fork, int *exit_code) {
-	setup_longopts();
+  setup_longopts();
 
-	int o = 0, longopt_idx = -1;
+  int o = 0, longopt_idx = -1;
 
-	// Pre-parse the command line arguments to check for --config and invalid
-	// switches
-	// Must reset optind to 0 here in case we reread the command line
-	// arguments
-	optind = 1;
-	*config_file = NULL;
-	*exit_code = 0;
-	while (-1 != (o = getopt_long(argc, argv, shortopts, longopts, &longopt_idx))) {
-		if (o == 256) {
-			*config_file = strdup(optarg);
-		} else if (o == 'h') {
-			usage(argv[0], 0);
-			return true;
+  // Pre-parse the command line arguments to check for --config and invalid
+  // switches
+  // Must reset optind to 0 here in case we reread the command line
+  // arguments
+  optind = 1;
+  *config_file = NULL;
+  *exit_code = 0;
+  while (-1 != (o = getopt_long(argc, argv, shortopts, longopts, &longopt_idx))) {
+    if (o == 256) {
+      *config_file = strdup(optarg);
+    } else if (o == 'h') {
+      usage(argv[0], 0);
+      return true;
 
-		} else if (o == 'b') {
-			*fork = true;
-		} else if (o == 314) {
-			*all_xerrors = true;
-		} else if (o == 318) {
-			printf("%s\n", PICOM_VERSION);
-			return true;
-		} else if (o == '?' || o == ':') {
-			usage(argv[0], 1);
-			goto err;
-		}
-	}
+    } else if (o == 'b') {
+      *fork = true;
+    } else if (o == 314) {
+      *all_xerrors = true;
+    } else if (o == 318) {
+      printf("%s\n", PICOM_VERSION);
+      return true;
+    } else if (o == '?' || o == ':') {
+      usage(argv[0], 1);
+      goto err;
+    }
+  }
 
-	// Check for abundant positional arguments
-	if (optind < argc) {
-		// log is not initialized here yet
-		fprintf(stderr, "picom doesn't accept positional arguments.\n");
-		goto err;
-	}
+  // Check for abundant positional arguments
+  if (optind < argc) {
+    // log is not initialized here yet
+    fprintf(stderr, "picom doesn't accept positional arguments.\n");
+    goto err;
+  }
 
-	return false;
+  return false;
 err:
-	*exit_code = 1;
-	return true;
+  *exit_code = 1;
+  return true;
 }
 
 /**
@@ -371,42 +370,40 @@ err:
 bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
              bool fading_enable, bool conv_kern_hasneg, win_option_mask_t *winopt_mask) {
 
-	int o = 0, longopt_idx = -1;
+  int o = 0, longopt_idx = -1;
 
-	char *lc_numeric_old = strdup(setlocale(LC_NUMERIC, NULL));
+  char *lc_numeric_old = strdup(setlocale(LC_NUMERIC, NULL));
 
-	// Enforce LC_NUMERIC locale "C" here to make sure dots are recognized
-	// instead of commas in atof().
-	setlocale(LC_NUMERIC, "C");
+  // Enforce LC_NUMERIC locale "C" here to make sure dots are recognized
+  // instead of commas in atof().
+  setlocale(LC_NUMERIC, "C");
 
-	// Parse command line arguments. Range checking will be done later.
+  // Parse command line arguments. Range checking will be done later.
 
-	bool failed = false;
-	const char *deprecation_message attr_unused =
-	    "has been removed. If you encounter problems "
-	    "without this feature, please feel free to "
-	    "open a bug report.";
-	optind = 1;
-	while (-1 != (o = getopt_long(argc, argv, shortopts, longopts, &longopt_idx))) {
-		switch (o) {
+  bool failed = false;
+  const char *deprecation_message attr_unused =
+      "has been removed. If you encounter problems "
+      "without this feature, please feel free to "
+      "open a bug report.";
+  optind = 1;
+  while (-1 != (o = getopt_long(argc, argv, shortopts, longopts, &longopt_idx))) {
+    switch (o) {
 #define P_CASEBOOL(idx, option)                                                          \
-	case idx:                                                                        \
-		opt->option = true;                                                      \
-		break
+  case idx: opt->option = true; break
 #define P_CASELONG(idx, option)                                                          \
-	case idx:                                                                        \
-		if (!parse_long(optarg, &opt->option)) {                                 \
-			exit(1);                                                         \
-		}                                                                        \
-		break
+  case idx:                                                                              \
+    if (!parse_long(optarg, &opt->option)) {                                             \
+      exit(1);                                                                           \
+    }                                                                                    \
+    break
 #define P_CASEINT(idx, option)                                                           \
-	case idx:                                                                        \
-		if (!parse_int(optarg, &opt->option)) {                                  \
-			exit(1);                                                         \
-		}                                                                        \
-		break
+  case idx:                                                                              \
+    if (!parse_int(optarg, &opt->option)) {                                              \
+      exit(1);                                                                           \
+    }                                                                                    \
+    break
 
-		// clang-format off
+    // clang-format off
 		// Short options
 		case 318:
 		case 'h':
@@ -809,147 +806,146 @@ bool get_cfg(options_t *opt, int argc, char *const *argv, bool shadow_enable,
 		default: usage(argv[0], 1); break;
 #undef P_CASEBOOL
 		}
-		// clang-format on
+    // clang-format on
 
-		if (failed) {
-			// Parsing this option has failed, break the loop
-			break;
-		}
-	}
+    if (failed) {
+      // Parsing this option has failed, break the loop
+      break;
+    }
+  }
 
-	// Restore LC_NUMERIC
-	setlocale(LC_NUMERIC, lc_numeric_old);
-	free(lc_numeric_old);
+  // Restore LC_NUMERIC
+  setlocale(LC_NUMERIC, lc_numeric_old);
+  free(lc_numeric_old);
 
-	if (failed) {
-		return false;
-	}
+  if (failed) {
+    return false;
+  }
 
-	if (opt->monitor_repaint && opt->backend != BKEND_XRENDER && opt->legacy_backends) {
-		log_warn("--monitor-repaint has no effect when backend is not xrender");
-	}
+  if (opt->monitor_repaint && opt->backend != BKEND_XRENDER && opt->legacy_backends) {
+    log_warn("--monitor-repaint has no effect when backend is not xrender");
+  }
 
-	if (opt->backend == BKEND_EGL) {
-		if (opt->legacy_backends) {
-			log_error("The egl backend is not supported with "
-			          "--legacy-backends");
-			return false;
-		}
-		log_warn("The egl backend is still experimental, use with care.");
-	}
+  if (opt->backend == BKEND_EGL) {
+    if (opt->legacy_backends) {
+      log_error("The egl backend is not supported with "
+                "--legacy-backends");
+      return false;
+    }
+    log_warn("The egl backend is still experimental, use with care.");
+  }
 
-	if (!opt->legacy_backends && !backend_list[opt->backend]) {
-		log_error("Backend \"%s\" is only available as part of the legacy "
-		          "backends.",
-		          BACKEND_STRS[opt->backend]);
-		return false;
-	}
+  if (!opt->legacy_backends && !backend_list[opt->backend]) {
+    log_error("Backend \"%s\" is only available as part of the legacy "
+              "backends.",
+              BACKEND_STRS[opt->backend]);
+    return false;
+  }
 
-	if (opt->debug_mode && opt->legacy_backends) {
-		log_error("Debug mode does not work with the legacy backends.");
-		return false;
-	}
+  if (opt->debug_mode && opt->legacy_backends) {
+    log_error("Debug mode does not work with the legacy backends.");
+    return false;
+  }
 
-	if (opt->transparent_clipping && opt->legacy_backends) {
-		log_error("Transparent clipping does not work with the legacy "
-		          "backends");
-		return false;
-	}
+  if (opt->transparent_clipping && opt->legacy_backends) {
+    log_error("Transparent clipping does not work with the legacy "
+              "backends");
+    return false;
+  }
 
-	if (opt->glx_fshader_win_str && !opt->legacy_backends) {
-		log_warn("--glx-fshader-win has been replaced by "
-		         "\"--window-shader-fg\" for the new backends.");
-	}
+  if (opt->glx_fshader_win_str && !opt->legacy_backends) {
+    log_warn("--glx-fshader-win has been replaced by "
+             "\"--window-shader-fg\" for the new backends.");
+  }
 
-	if (opt->window_shader_fg || opt->window_shader_fg_rules) {
-		if (opt->backend == BKEND_XRENDER || opt->legacy_backends) {
-			log_warn(opt->backend == BKEND_XRENDER
-			             ? "Shader interface is not supported by the xrender "
-			               "backend."
-			             : "The new shader interface is not supported by the "
-			               "legacy glx backend. You may want to use "
-			               "--glx-fshader-win instead.");
-			opt->window_shader_fg = NULL;
-			c2_list_free(&opt->window_shader_fg_rules, free);
-		}
-	}
+  if (opt->window_shader_fg || opt->window_shader_fg_rules) {
+    if (opt->backend == BKEND_XRENDER || opt->legacy_backends) {
+      log_warn(opt->backend == BKEND_XRENDER
+                   ? "Shader interface is not supported by the xrender "
+                     "backend."
+                   : "The new shader interface is not supported by the "
+                     "legacy glx backend. You may want to use "
+                     "--glx-fshader-win instead.");
+      opt->window_shader_fg = NULL;
+      c2_list_free(&opt->window_shader_fg_rules, free);
+    }
+  }
 
-	// Range checking and option assignments
-	opt->fade_delta = max2(opt->fade_delta, 1);
-	opt->shadow_radius = max2(opt->shadow_radius, 0);
-	opt->shadow_red = normalize_d(opt->shadow_red);
-	opt->shadow_green = normalize_d(opt->shadow_green);
-	opt->shadow_blue = normalize_d(opt->shadow_blue);
-	opt->inactive_dim = normalize_d(opt->inactive_dim);
-	opt->frame_opacity = normalize_d(opt->frame_opacity);
-	opt->shadow_opacity = normalize_d(opt->shadow_opacity);
-	opt->max_brightness = normalize_d(opt->max_brightness);
-	if (opt->max_brightness < 1.0) {
-		if (opt->backend == BKEND_XRENDER || opt->legacy_backends) {
-			log_warn("--max-brightness is not supported by the %s backend. "
-			         "Falling back to 1.0.",
-			         opt->backend == BKEND_XRENDER ? "xrender" : "legacy glx");
-			opt->max_brightness = 1.0;
-		} else if (opt->use_damage) {
-			log_warn("--max-brightness requires --no-use-damage. Falling "
-			         "back to 1.0.");
-			opt->max_brightness = 1.0;
-		}
-	}
+  // Range checking and option assignments
+  opt->fade_delta = max2(opt->fade_delta, 1);
+  opt->shadow_radius = max2(opt->shadow_radius, 0);
+  opt->shadow_red = normalize_d(opt->shadow_red);
+  opt->shadow_green = normalize_d(opt->shadow_green);
+  opt->shadow_blue = normalize_d(opt->shadow_blue);
+  opt->inactive_dim = normalize_d(opt->inactive_dim);
+  opt->frame_opacity = normalize_d(opt->frame_opacity);
+  opt->shadow_opacity = normalize_d(opt->shadow_opacity);
+  opt->max_brightness = normalize_d(opt->max_brightness);
+  if (opt->max_brightness < 1.0) {
+    if (opt->backend == BKEND_XRENDER || opt->legacy_backends) {
+      log_warn("--max-brightness is not supported by the %s backend. "
+               "Falling back to 1.0.",
+               opt->backend == BKEND_XRENDER ? "xrender" : "legacy glx");
+      opt->max_brightness = 1.0;
+    } else if (opt->use_damage) {
+      log_warn("--max-brightness requires --no-use-damage. Falling "
+               "back to 1.0.");
+      opt->max_brightness = 1.0;
+    }
+  }
 
-	// --blur-background-frame implies --blur-background
-	if (opt->blur_background_frame && opt->blur_method == BLUR_METHOD_NONE) {
-		opt->blur_method = BLUR_METHOD_KERNEL;
-	}
+  // --blur-background-frame implies --blur-background
+  if (opt->blur_background_frame && opt->blur_method == BLUR_METHOD_NONE) {
+    opt->blur_method = BLUR_METHOD_KERNEL;
+  }
 
-	// Apply default wintype options that are dependent on global options
-	set_default_winopts(opt, winopt_mask, shadow_enable, fading_enable,
-	                    opt->blur_method != BLUR_METHOD_NONE);
+  // Apply default wintype options that are dependent on global options
+  set_default_winopts(opt, winopt_mask, shadow_enable, fading_enable,
+                      opt->blur_method != BLUR_METHOD_NONE);
 
-	// Other variables determined by options
+  // Other variables determined by options
 
-	// Determine whether we track window grouping
-	if (opt->detect_transient || opt->detect_client_leader) {
-		opt->track_leader = true;
-	}
+  // Determine whether we track window grouping
+  if (opt->detect_transient || opt->detect_client_leader) {
+    opt->track_leader = true;
+  }
 
-	// Fill default blur kernel
-	if (opt->blur_method == BLUR_METHOD_KERNEL &&
-	    (!opt->blur_kerns || !opt->blur_kerns[0])) {
-		opt->blur_kerns = parse_blur_kern_lst("3x3box", &conv_kern_hasneg,
-		                                      &opt->blur_kernel_count);
-		CHECK(opt->blur_kerns);
-		CHECK(opt->blur_kernel_count);
-	}
+  // Fill default blur kernel
+  if (opt->blur_method == BLUR_METHOD_KERNEL && (!opt->blur_kerns || !opt->blur_kerns[0])) {
+    opt->blur_kerns =
+        parse_blur_kern_lst("3x3box", &conv_kern_hasneg, &opt->blur_kernel_count);
+    CHECK(opt->blur_kerns);
+    CHECK(opt->blur_kernel_count);
+  }
 
-	// Sanitize parameters for dual-filter kawase blur
-	if (opt->blur_method == BLUR_METHOD_DUAL_KAWASE) {
-		if (opt->blur_strength <= 0 && opt->blur_radius > 500) {
-			log_warn("Blur radius >500 not supported by dual_kawase method, "
-			         "capping to 500.");
-			opt->blur_radius = 500;
-		}
-		if (opt->blur_strength > 20) {
-			log_warn("Blur strength >20 not supported by dual_kawase method, "
-			         "capping to 20.");
-			opt->blur_strength = 20;
-		}
-		if (opt->legacy_backends) {
-			log_warn("Dual-kawase blur is not implemented by the legacy "
-			         "backends.");
-		}
-	}
+  // Sanitize parameters for dual-filter kawase blur
+  if (opt->blur_method == BLUR_METHOD_DUAL_KAWASE) {
+    if (opt->blur_strength <= 0 && opt->blur_radius > 500) {
+      log_warn("Blur radius >500 not supported by dual_kawase method, "
+               "capping to 500.");
+      opt->blur_radius = 500;
+    }
+    if (opt->blur_strength > 20) {
+      log_warn("Blur strength >20 not supported by dual_kawase method, "
+               "capping to 20.");
+      opt->blur_strength = 20;
+    }
+    if (opt->legacy_backends) {
+      log_warn("Dual-kawase blur is not implemented by the legacy "
+               "backends.");
+    }
+  }
 
-	if (opt->resize_damage < 0) {
-		log_warn("Negative --resize-damage will not work correctly.");
-	}
+  if (opt->resize_damage < 0) {
+    log_warn("Negative --resize-damage will not work correctly.");
+  }
 
-	if (opt->backend == BKEND_XRENDER && conv_kern_hasneg) {
-		log_warn("A convolution kernel with negative values may not work "
-		         "properly under X Render backend.");
-	}
+  if (opt->backend == BKEND_XRENDER && conv_kern_hasneg) {
+    log_warn("A convolution kernel with negative values may not work "
+             "properly under X Render backend.");
+  }
 
-	return true;
+  return true;
 }
 
 // vim: set noet sw=8 ts=8 :

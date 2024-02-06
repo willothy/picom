@@ -5,14 +5,14 @@
 #define NTIERS (3)
 
 struct render_statistics {
-	/// Rolling window of rendering times (in us) and the tiers they belong to.
-	/// We keep track of the tiers because the vblank time estimate can change over
-	/// time.
-	struct rolling_window render_times;
-	/// Estimate the 95-th percentile of rendering times
-	struct rolling_quantile render_time_quantile;
-	/// Time between each vblanks
-	struct cumulative_mean_and_var vblank_time_us;
+  /// Rolling window of rendering times (in us) and the tiers they belong to.
+  /// We keep track of the tiers because the vblank time estimate can change over
+  /// time.
+  struct rolling_window render_times;
+  /// Estimate the 95-th percentile of rendering times
+  struct rolling_quantile render_time_quantile;
+  /// Time between each vblanks
+  struct cumulative_mean_and_var vblank_time_us;
 };
 
 void render_statistics_init(struct render_statistics *rs, int window_size);

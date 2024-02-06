@@ -20,7 +20,7 @@ struct win;
  * Return a string representation of a D-Bus message type.
  */
 static inline const char *cdbus_repr_msgtype(DBusMessage *msg) {
-	return dbus_message_type_to_string(dbus_message_get_type(msg));
+  return dbus_message_type_to_string(dbus_message_get_type(msg));
 }
 
 /**

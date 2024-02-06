@@ -11,126 +11,126 @@
 #include "region.h"
 
 #define CASESTRRET(s)                                                                    \
-	case s: return #s
+  case s: return #s
 struct gl_blur_context;
 
 static inline GLint glGetUniformLocationChecked(GLuint p, const char *name) {
-	auto ret = glGetUniformLocation(p, name);
-	if (ret < 0) {
-		log_info("Failed to get location of uniform '%s'. This is normal when "
-		         "using custom shaders.",
-		         name);
-	}
-	return ret;
+  auto ret = glGetUniformLocation(p, name);
+  if (ret < 0) {
+    log_info("Failed to get location of uniform '%s'. This is normal when "
+             "using custom shaders.",
+             name);
+  }
+  return ret;
 }
 
 #define bind_uniform(shader, uniform)                                                    \
-	(shader)->uniform_##uniform = glGetUniformLocationChecked((shader)->prog, #uniform)
+  (shader)->uniform_##uniform = glGetUniformLocationChecked((shader)->prog, #uniform)
 
 // Program and uniforms for window shader
 typedef struct {
-	UT_hash_handle hh;
-	uint32_t id;
-	GLuint prog;
-	GLint uniform_opacity;
-	GLint uniform_invert_color;
-	GLint uniform_tex;
-	GLint uniform_effective_size;
-	GLint uniform_dim;
-	GLint uniform_brightness;
-	GLint uniform_max_brightness;
-	GLint uniform_corner_radius;
-	GLint uniform_border_width;
-	GLint uniform_time;
+  UT_hash_handle hh;
+  uint32_t id;
+  GLuint prog;
+  GLint uniform_opacity;
+  GLint uniform_invert_color;
+  GLint uniform_tex;
+  GLint uniform_effective_size;
+  GLint uniform_dim;
+  GLint uniform_brightness;
+  GLint uniform_max_brightness;
+  GLint uniform_corner_radius;
+  GLint uniform_border_width;
+  GLint uniform_time;
 
-	GLint uniform_mask_tex;
-	GLint uniform_mask_offset;
-	GLint uniform_mask_corner_radius;
-	GLint uniform_mask_inverted;
+  GLint uniform_mask_tex;
+  GLint uniform_mask_offset;
+  GLint uniform_mask_corner_radius;
+  GLint uniform_mask_inverted;
 } gl_win_shader_t;
 
 // Program and uniforms for brightness shader
 typedef struct {
-	GLuint prog;
+  GLuint prog;
 } gl_brightness_shader_t;
 
 typedef struct {
-	GLuint prog;
-	GLint uniform_color;
+  GLuint prog;
+  GLint uniform_color;
 } gl_shadow_shader_t;
 
 // Program and uniforms for blur shader
 typedef struct {
-	GLuint prog;
-	GLint uniform_pixel_norm;
-	GLint uniform_opacity;
-	GLint texorig_loc;
-	GLint scale_loc;
+  GLuint prog;
+  GLint uniform_pixel_norm;
+  GLint uniform_opacity;
+  GLint texorig_loc;
+  GLint scale_loc;
 
-	GLint uniform_mask_tex;
-	GLint uniform_mask_offset;
-	GLint uniform_mask_corner_radius;
-	GLint uniform_mask_inverted;
+  GLint uniform_mask_tex;
+  GLint uniform_mask_offset;
+  GLint uniform_mask_corner_radius;
+  GLint uniform_mask_inverted;
 } gl_blur_shader_t;
 
 typedef struct {
-	GLuint prog;
-	GLint color_loc;
+  GLuint prog;
+  GLint color_loc;
 } gl_fill_shader_t;
 
 /// @brief Wrapper of a bound GL texture.
 struct gl_texture {
-	int refcount;
-	bool has_alpha;
-	GLuint texture;
-	int width, height;
-	bool y_inverted;
+  int refcount;
+  bool has_alpha;
+  GLuint texture;
+  int width, height;
+  bool y_inverted;
 
-	// Textures for auxiliary uses.
-	GLuint auxiliary_texture[2];
-	gl_win_shader_t *shader;
-	void *user_data;
+  // Textures for auxiliary uses.
+  GLuint auxiliary_texture[2];
+  gl_win_shader_t *shader;
+  void *user_data;
 };
 
 struct gl_data {
-	backend_t base;
-	// If we are using proprietary NVIDIA driver
-	bool is_nvidia;
-	// If ARB_robustness extension is present
-	bool has_robustness;
-	// If EXT_EGL_image_storage extension is present
-	bool has_egl_image_storage;
-	// Height and width of the root window
-	int height, width;
-	// Hash-table of window shaders
-	gl_win_shader_t *default_shader;
-	gl_brightness_shader_t brightness_shader;
-	gl_fill_shader_t fill_shader;
-	gl_shadow_shader_t shadow_shader;
-	GLuint back_texture, back_fbo;
-	GLint back_format;
-	GLuint frame_timing[2];
-	int current_frame_timing;
-	GLuint present_prog;
+  backend_t base;
+  // If we are using proprietary NVIDIA driver
+  bool is_nvidia;
+  // If ARB_robustness extension is present
+  bool has_robustness;
+  // If EXT_EGL_image_storage extension is present
+  bool has_egl_image_storage;
+  // Height and width of the root window
+  int height, width;
+  // Hash-table of window shaders
+  gl_win_shader_t *default_shader;
+  gl_brightness_shader_t brightness_shader;
+  gl_fill_shader_t fill_shader;
+  gl_shadow_shader_t shadow_shader;
+  GLuint back_texture, back_fbo;
+  GLint back_format;
+  GLuint frame_timing[2];
+  int current_frame_timing;
+  GLuint present_prog;
 
-	bool dithered_present;
+  bool dithered_present;
 
-	GLuint default_mask_texture;
+  GLuint default_mask_texture;
 
-	/// Called when an gl_texture is decoupled from the texture it refers. Returns
-	/// the decoupled user_data
-	void *(*decouple_texture_user_data)(backend_t *base, void *user_data);
+  /// Called when an gl_texture is decoupled from the texture it refers. Returns
+  /// the decoupled user_data
+  void *(*decouple_texture_user_data)(backend_t *base, void *user_data);
 
-	/// Release the user data attached to a gl_texture
-	void (*release_user_data)(backend_t *base, struct gl_texture *);
+  /// Release the user data attached to a gl_texture
+  void (*release_user_data)(backend_t *base, struct gl_texture *);
 
-	struct log_target *logger;
+  struct log_target *logger;
 };
 
 typedef struct session session_t;
 
 #define GL_PROG_MAIN_INIT                                                                \
-	{ .prog = 0, .unifm_opacity = -1, .unifm_invert_color = -1, .unifm_tex = -1, }
+  { .prog = 0, .unifm_opacity = -1, .unifm_invert_color = -1, .unifm_tex = -1, }
 
 void gl_prepare(backend_t *base, const region_t *reg);
 void x_rect_to_coords(int nrects, const rect_t *rects, coord_t image_dst,
@@ -151,8 +151,8 @@ bool gl_last_render_time(backend_t *backend_data, struct timespec *time);
 /**
  * @brief Render a region with texture data.
  */
-void gl_compose(backend_t *, void *image_data, coord_t image_dst, void *mask,
-                coord_t mask_dst, const region_t *reg_tgt, const region_t *reg_visible, bool lerp);
+void gl_compose(backend_t *, void *image_data, coord_t image_dst, void *mask, coord_t mask_dst,
+                const region_t *reg_tgt, const region_t *reg_visible, bool lerp);
 
 void gl_resize(struct gl_data *, int width, int height);
 
@@ -193,25 +193,25 @@ enum device_status gl_device_status(backend_t *base);
  * Get a textual representation of an OpenGL error.
  */
 static inline const char *gl_get_err_str(GLenum err) {
-	switch (err) {
-		CASESTRRET(GL_NO_ERROR);
-		CASESTRRET(GL_INVALID_ENUM);
-		CASESTRRET(GL_INVALID_VALUE);
-		CASESTRRET(GL_INVALID_OPERATION);
-		CASESTRRET(GL_INVALID_FRAMEBUFFER_OPERATION);
-		CASESTRRET(GL_OUT_OF_MEMORY);
-		CASESTRRET(GL_STACK_UNDERFLOW);
-		CASESTRRET(GL_STACK_OVERFLOW);
-		CASESTRRET(GL_FRAMEBUFFER_UNDEFINED);
-		CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT);
-		CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT);
-		CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER);
-		CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER);
-		CASESTRRET(GL_FRAMEBUFFER_UNSUPPORTED);
-		CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE);
-		CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS);
-	}
-	return NULL;
+  switch (err) {
+    CASESTRRET(GL_NO_ERROR);
+    CASESTRRET(GL_INVALID_ENUM);
+    CASESTRRET(GL_INVALID_VALUE);
+    CASESTRRET(GL_INVALID_OPERATION);
+    CASESTRRET(GL_INVALID_FRAMEBUFFER_OPERATION);
+    CASESTRRET(GL_OUT_OF_MEMORY);
+    CASESTRRET(GL_STACK_UNDERFLOW);
+    CASESTRRET(GL_STACK_OVERFLOW);
+    CASESTRRET(GL_FRAMEBUFFER_UNDEFINED);
+    CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT);
+    CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT);
+    CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER);
+    CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER);
+    CASESTRRET(GL_FRAMEBUFFER_UNSUPPORTED);
+    CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE);
+    CASESTRRET(GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS);
+  }
+  return NULL;
 }
 
 /**
@@ -220,23 +220,21 @@ static inline const char *gl_get_err_str(GLenum err) {
  * http://blog.nobel-joergensen.com/2013/01/29/debugging-opengl-using-glgeterror/
  */
 static inline void gl_check_err_(const char *func, int line) {
-	GLenum err = GL_NO_ERROR;
+  GLenum err = GL_NO_ERROR;
 
-	while (GL_NO_ERROR != (err = glGetError())) {
-		const char *errtext = gl_get_err_str(err);
-		if (errtext) {
-			log_printf(tls_logger, LOG_LEVEL_ERROR, func,
-			           "GL error at line %d: %s", line, errtext);
-		} else {
-			log_printf(tls_logger, LOG_LEVEL_ERROR, func,
-			           "GL error at line %d: %d", line, err);
-		}
-	}
+  while (GL_NO_ERROR != (err = glGetError())) {
+    const char *errtext = gl_get_err_str(err);
+    if (errtext) {
+      log_printf(tls_logger, LOG_LEVEL_ERROR, func, "GL error at line %d: %s", line, errtext);
+    } else {
+      log_printf(tls_logger, LOG_LEVEL_ERROR, func, "GL error at line %d: %d", line, err);
+    }
+  }
 }
 
 static inline void gl_clear_err(void) {
-	while (glGetError() != GL_NO_ERROR)
-		;
+  while (glGetError() != GL_NO_ERROR)
+    ;
 }
 
 #define gl_check_err() gl_check_err_(__func__, __LINE__)
@@ -245,22 +243,22 @@ static inline void gl_clear_err(void) {
  * Check for GL framebuffer completeness.
  */
 static inline bool gl_check_fb_complete_(const char *func, int line, GLenum fb) {
-	GLenum status = glCheckFramebufferStatus(fb);
+  GLenum status = glCheckFramebufferStatus(fb);
 
-	if (status == GL_FRAMEBUFFER_COMPLETE) {
-		return true;
-	}
+  if (status == GL_FRAMEBUFFER_COMPLETE) {
+    return true;
+  }
 
-	const char *stattext = gl_get_err_str(status);
-	if (stattext) {
-		log_printf(tls_logger, LOG_LEVEL_ERROR, func,
-		           "Framebuffer attachment failed at line %d: %s", line, stattext);
-	} else {
-		log_printf(tls_logger, LOG_LEVEL_ERROR, func,
-		           "Framebuffer attachment failed at line %d: %d", line, status);
-	}
+  const char *stattext = gl_get_err_str(status);
+  if (stattext) {
+    log_printf(tls_logger, LOG_LEVEL_ERROR, func,
+               "Framebuffer attachment failed at line %d: %s", line, stattext);
+  } else {
+    log_printf(tls_logger, LOG_LEVEL_ERROR, func,
+               "Framebuffer attachment failed at line %d: %d", line, status);
+  }
 
-	return false;
+  return false;
 }
 
 #define gl_check_fb_complete(fb) gl_check_fb_complete_(__func__, __LINE__, (fb))
@@ -269,20 +267,20 @@ static inline bool gl_check_fb_complete_(const char *func, int line, GLenum fb) 
  * Check if a GL extension exists.
  */
 static inline bool gl_has_extension(const char *ext) {
-	int nexts = 0;
-	glGetIntegerv(GL_NUM_EXTENSIONS, &nexts);
-	for (int i = 0; i < nexts || !nexts; i++) {
-		const char *exti = (const char *)glGetStringi(GL_EXTENSIONS, (GLuint)i);
-		if (exti == NULL) {
-			break;
-		}
-		if (strcmp(ext, exti) == 0) {
-			return true;
-		}
-	}
-	gl_clear_err();
-	log_info("Missing GL extension %s.", ext);
-	return false;
+  int nexts = 0;
+  glGetIntegerv(GL_NUM_EXTENSIONS, &nexts);
+  for (int i = 0; i < nexts || !nexts; i++) {
+    const char *exti = (const char *)glGetStringi(GL_EXTENSIONS, (GLuint)i);
+    if (exti == NULL) {
+      break;
+    }
+    if (strcmp(ext, exti) == 0) {
+      return true;
+    }
+  }
+  gl_clear_err();
+  log_info("Missing GL extension %s.", ext);
+  return false;
 }
 
 static const GLuint vert_coord_loc = 0;

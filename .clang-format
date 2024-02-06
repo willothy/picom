@@ -1,9 +1,9 @@
 BasedOnStyle: LLVM
-TabWidth: 8
-UseTab: ForIndentation
+TabWidth: 2
+IndentWidth: 2
+UseTab: Never
 BreakBeforeBraces: Attach
 #BreakStringLiterals: true
-IndentWidth: 8
 AlignAfterOpenBracket: Align
 ColumnLimit: 90
 #ExperimentalAutoDetectBinPacking: true

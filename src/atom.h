@@ -53,18 +53,18 @@
 #define ATOM_DEF(x) xcb_atom_t a##x
 
 struct atom {
-	struct cache *c;
-	LIST_APPLY(ATOM_DEF, SEP_COLON, ATOM_LIST1);
-	LIST_APPLY(ATOM_DEF, SEP_COLON, ATOM_LIST2);
+  struct cache *c;
+  LIST_APPLY(ATOM_DEF, SEP_COLON, ATOM_LIST1);
+  LIST_APPLY(ATOM_DEF, SEP_COLON, ATOM_LIST2);
 };
 
 struct atom *init_atoms(xcb_connection_t *);
 
 static inline xcb_atom_t get_atom(struct atom *a, const char *key) {
-	return (xcb_atom_t)(intptr_t)cache_get(a->c, key, NULL);
+  return (xcb_atom_t)(intptr_t)cache_get(a->c, key, NULL);
 }
 
 static inline void destroy_atoms(struct atom *a) {
-	cache_free(a->c);
-	free(a);
+  cache_free(a->c);
+  free(a);
 }

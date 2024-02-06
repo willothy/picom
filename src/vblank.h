@@ -15,15 +15,15 @@
 struct vblank_scheduler;
 
 struct vblank_event {
-	uint64_t msc;
-	uint64_t ust;
+  uint64_t msc;
+  uint64_t ust;
 };
 
 enum vblank_callback_action {
-	/// The callback should be called again in the next vblank.
-	VBLANK_CALLBACK_AGAIN,
-	/// The callback is done and should not be called again.
-	VBLANK_CALLBACK_DONE,
+  /// The callback should be called again in the next vblank.
+  VBLANK_CALLBACK_AGAIN,
+  /// The callback is done and should not be called again.
+  VBLANK_CALLBACK_DONE,
 };
 
 typedef enum vblank_callback_action (*vblank_callback_t)(struct vblank_event *event,

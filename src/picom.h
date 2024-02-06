@@ -26,9 +26,9 @@
 #include "x.h"
 
 enum root_flags {
-	ROOT_FLAGS_SCREEN_CHANGE = 1,        // Received RandR screen change notify, we
-	                                     // use this to track refresh rate changes
-	ROOT_FLAGS_CONFIGURED = 2        // Received configure notify on the root window
+  ROOT_FLAGS_SCREEN_CHANGE = 1,        // Received RandR screen change notify, we
+                                       // use this to track refresh rate changes
+  ROOT_FLAGS_CONFIGURED = 2            // Received configure notify on the root window
 };
 
 // == Functions ==
@@ -58,13 +58,13 @@ uint8_t session_redirection_mode(session_t *ps);
  * Set a <code>switch_t</code> array of all unset wintypes to true.
  */
 static inline void wintype_arr_enable_unset(switch_t arr[]) {
-	wintype_t i;
+  wintype_t i;
 
-	for (i = 0; i < NUM_WINTYPES; ++i) {
-		if (UNSET == arr[i]) {
-			arr[i] = ON;
-		}
-	}
+  for (i = 0; i < NUM_WINTYPES; ++i) {
+    if (UNSET == arr[i]) {
+      arr[i] = ON;
+    }
+  }
 }
 
 /**
@@ -75,13 +75,13 @@ static inline void wintype_arr_enable_unset(switch_t arr[]) {
  * @param wid window ID to search for
  */
 static inline bool array_wid_exists(const xcb_window_t *arr, int count, xcb_window_t wid) {
-	while (count--) {
-		if (arr[count] == wid) {
-			return true;
-		}
-	}
+  while (count--) {
+    if (arr[count] == wid) {
+      return true;
+    }
+  }
 
-	return false;
+  return false;
 }
 
 #ifndef CONFIG_OPENGL
@@ -96,12 +96,12 @@ free_win_res_glx(session_t *ps attr_unused, struct managed_win *w attr_unused) {
  * Dump an drawable's info.
  */
 static inline void dump_drawable(session_t *ps, xcb_drawable_t drawable) {
-	auto r = xcb_get_geometry_reply(ps->c.c, xcb_get_geometry(ps->c.c, drawable), NULL);
-	if (!r) {
-		log_trace("Drawable %#010x: Failed", drawable);
-		return;
-	}
-	log_trace("Drawable %#010x: x = %u, y = %u, wid = %u, hei = %d, b = %u, d = %u",
-	          drawable, r->x, r->y, r->width, r->height, r->border_width, r->depth);
-	free(r);
+  auto r = xcb_get_geometry_reply(ps->c.c, xcb_get_geometry(ps->c.c, drawable), NULL);
+  if (!r) {
+    log_trace("Drawable %#010x: Failed", drawable);
+    return;
+  }
+  log_trace("Drawable %#010x: x = %u, y = %u, wid = %u, hei = %d, b = %u, d = %u",
+            drawable, r->x, r->y, r->width, r->height, r->border_width, r->depth);
+  free(r);
 }

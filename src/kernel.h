@@ -8,9 +8,9 @@
 /// Code for generating convolution kernels
 
 typedef struct conv {
-	int w, h;
-	double *rsum;
-	double data[];
+  int w, h;
+  double *rsum;
+  double data[];
 } conv;
 
 /// Calculate the sum of a rectangle part of the convolution kernel
@@ -37,6 +37,6 @@ conv *gaussian_kernel_autodetect_deviation(double shadow_radius);
 void sum_kernel_preprocess(conv *map);
 
 static inline void free_conv(conv *k) {
-	free(k->rsum);
-	free(k);
+  free(k->rsum);
+  free(k);
 }

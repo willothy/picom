@@ -17,18 +17,18 @@ typedef struct session session_t;
 struct managed_win;
 
 typedef struct paint {
-	xcb_pixmap_t pixmap;
-	xcb_render_picture_t pict;
-	glx_texture_t *ptex;
+  xcb_pixmap_t pixmap;
+  xcb_render_picture_t pict;
+  glx_texture_t *ptex;
 #ifdef CONFIG_OPENGL
-	struct glx_fbconfig_info *fbcfg;
+  struct glx_fbconfig_info *fbcfg;
 #endif
 } paint_t;
 
 typedef struct clip {
-	xcb_render_picture_t pict;
-	int x;
-	int y;
+  xcb_render_picture_t pict;
+  int x;
+  int y;
 } clip_t;
 
 void render(session_t *ps, int x, int y, int dx, int dy, int w, int h, int fullw,

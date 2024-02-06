@@ -8,36 +8,36 @@
 #include "compiler.h"
 
 enum log_level {
-	LOG_LEVEL_INVALID = -1,
-	/// Very noisy debug messages, many lines per frame.
-	LOG_LEVEL_TRACE = 0,
-	/// Frequent debug messages, a few lines per frame.
-	LOG_LEVEL_VERBOSE,
-	/// Less frequent debug messages.
-	LOG_LEVEL_DEBUG,
-	/// Informational messages.
-	LOG_LEVEL_INFO,
-	/// Warnings.
-	LOG_LEVEL_WARN,
-	/// Errors.
-	LOG_LEVEL_ERROR,
-	/// Fatal errors.
-	LOG_LEVEL_FATAL,
+  LOG_LEVEL_INVALID = -1,
+  /// Very noisy debug messages, many lines per frame.
+  LOG_LEVEL_TRACE = 0,
+  /// Frequent debug messages, a few lines per frame.
+  LOG_LEVEL_VERBOSE,
+  /// Less frequent debug messages.
+  LOG_LEVEL_DEBUG,
+  /// Informational messages.
+  LOG_LEVEL_INFO,
+  /// Warnings.
+  LOG_LEVEL_WARN,
+  /// Errors.
+  LOG_LEVEL_ERROR,
+  /// Fatal errors.
+  LOG_LEVEL_FATAL,
 };
 
-#define LOG_UNLIKELY(level, x, ...)                                                            \
-	do {                                                                                   \
-		if (unlikely(LOG_LEVEL_##level >= log_get_level_tls())) {                      \
-			log_printf(tls_logger, LOG_LEVEL_##level, __func__, x, ##__VA_ARGS__); \
-		}                                                                              \
-	} while (0)
+#define LOG_UNLIKELY(level, x, ...)                                                      \
+  do {                                                                                   \
+    if (unlikely(LOG_LEVEL_##level >= log_get_level_tls())) {                            \
+      log_printf(tls_logger, LOG_LEVEL_##level, __func__, x, ##__VA_ARGS__);             \
+    }                                                                                    \
+  } while (0)
 
-#define LOG(level, x, ...)                                                                     \
-	do {                                                                                   \
-		if (LOG_LEVEL_##level >= log_get_level_tls()) {                                \
-			log_printf(tls_logger, LOG_LEVEL_##level, __func__, x, ##__VA_ARGS__); \
-		}                                                                              \
-	} while (0)
+#define LOG(level, x, ...)                                                               \
+  do {                                                                                   \
+    if (LOG_LEVEL_##level >= log_get_level_tls()) {                                      \
+      log_printf(tls_logger, LOG_LEVEL_##level, __func__, x, ##__VA_ARGS__);             \
+    }                                                                                    \
+  } while (0)
 #define log_trace(x, ...) LOG_UNLIKELY(TRACE, x, ##__VA_ARGS__)
 #define log_verbose(x, ...) LOG_UNLIKELY(VERBOSE, x, ##__VA_ARGS__)
 #define log_debug(x, ...) LOG_UNLIKELY(DEBUG, x, ##__VA_ARGS__)
@@ -69,32 +69,32 @@ extern thread_local struct log *tls_logger;
 
 /// Create a thread local logger
 static inline void log_init_tls(void) {
-	tls_logger = log_new();
+  tls_logger = log_new();
 }
 /// Set thread local logger log level
 static inline void log_set_level_tls(int level) {
-	assert(tls_logger);
-	log_set_level(tls_logger, level);
+  assert(tls_logger);
+  log_set_level(tls_logger, level);
 }
 static inline attr_nonnull_all void log_add_target_tls(struct log_target *tgt) {
-	assert(tls_logger);
-	log_add_target(tls_logger, tgt);
+  assert(tls_logger);
+  log_add_target(tls_logger, tgt);
 }
 
 static inline attr_nonnull_all void log_remove_target_tls(struct log_target *tgt) {
-	assert(tls_logger);
-	log_remove_target(tls_logger, tgt);
+  assert(tls_logger);
+  log_remove_target(tls_logger, tgt);
 }
 
 static inline attr_pure enum log_level log_get_level_tls(void) {
-	assert(tls_logger);
-	return log_get_level(tls_logger);
+  assert(tls_logger);
+  return log_get_level(tls_logger);
 }
 
 static inline void log_deinit_tls(void) {
-	assert(tls_logger);
-	log_destroy(tls_logger);
-	tls_logger = NULL;
+  assert(tls_logger);
+  log_destroy(tls_logger);
+  tls_logger = NULL;
 }
 
 attr_malloc struct log_target *stderr_logger_new(void);

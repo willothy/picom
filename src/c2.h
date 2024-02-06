@@ -36,7 +36,7 @@ void *c2_list_get_data(const c2_lptr_t *condlist);
  * Destroy a condition list.
  */
 static inline void c2_list_free(c2_lptr_t **pcondlst, c2_userdata_free f) {
-	while ((*pcondlst = c2_free_lptr(*pcondlst, f))) {
-	}
-	*pcondlst = NULL;
+  while ((*pcondlst = c2_free_lptr(*pcondlst, f))) {
+  }
+  *pcondlst = NULL;
 }

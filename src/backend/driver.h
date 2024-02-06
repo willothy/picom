@@ -23,13 +23,13 @@ struct backend_base;
 /// also the generic modesetting driver.
 /// This enum represents _both_ drivers.
 enum driver {
-	DRIVER_AMDGPU = 1,        // AMDGPU for DDX, radeonsi for OpenGL
-	DRIVER_RADEON = 2,        // ATI for DDX, mesa r600 for OpenGL
-	DRIVER_FGLRX = 4,
-	DRIVER_NVIDIA = 8,
-	DRIVER_NOUVEAU = 16,
-	DRIVER_INTEL = 32,
-	DRIVER_MODESETTING = 64,
+  DRIVER_AMDGPU = 1,        // AMDGPU for DDX, radeonsi for OpenGL
+  DRIVER_RADEON = 2,        // ATI for DDX, mesa r600 for OpenGL
+  DRIVER_FGLRX = 4,
+  DRIVER_NVIDIA = 8,
+  DRIVER_NOUVEAU = 16,
+  DRIVER_INTEL = 32,
+  DRIVER_MODESETTING = 64,
 };
 
 static const char *driver_names[] = {
@@ -47,19 +47,19 @@ enum vblank_scheduler_type choose_vblank_scheduler(enum driver driver);
 
 // Print driver names to stdout, for diagnostics
 static inline void print_drivers(enum driver drivers) {
-	const char *seen_drivers[ARR_SIZE(driver_names)];
-	int driver_count = 0;
-	for (size_t i = 0; i < ARR_SIZE(driver_names); i++) {
-		if (drivers & (1UL << i)) {
-			seen_drivers[driver_count++] = driver_names[i];
-		}
-	}
+  const char *seen_drivers[ARR_SIZE(driver_names)];
+  int driver_count = 0;
+  for (size_t i = 0; i < ARR_SIZE(driver_names); i++) {
+    if (drivers & (1UL << i)) {
+      seen_drivers[driver_count++] = driver_names[i];
+    }
+  }
 
-	if (driver_count > 0) {
-		printf("%s", seen_drivers[0]);
-		for (int i = 1; i < driver_count; i++) {
-			printf(", %s", seen_drivers[i]);
-		}
-	}
-	printf("\n");
+  if (driver_count > 0) {
+    printf("%s", seen_drivers[0]);
+    for (int i = 1; i < driver_count; i++) {
+      printf(", %s", seen_drivers[i]);
+    }
+  }
+  printf("\n");
 }

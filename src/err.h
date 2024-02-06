@@ -14,24 +14,24 @@
 #define MAX_ERRNO 4095
 
 static inline void *must_use ERR_PTR(intptr_t err) {
-	return (void *)err;
+  return (void *)err;
 }
 
 static inline intptr_t must_use PTR_ERR(void *ptr) {
-	return (intptr_t)ptr;
+  return (intptr_t)ptr;
 }
 
 static inline bool must_use IS_ERR(void *ptr) {
-	return unlikely((uintptr_t)ptr > (uintptr_t)-MAX_ERRNO);
+  return unlikely((uintptr_t)ptr > (uintptr_t)-MAX_ERRNO);
 }
 
 static inline bool must_use IS_ERR_OR_NULL(void *ptr) {
-	return unlikely(!ptr) || IS_ERR(ptr);
+  return unlikely(!ptr) || IS_ERR(ptr);
 }
 
 static inline intptr_t must_use PTR_ERR_OR_ZERO(void *ptr) {
-	if (IS_ERR(ptr)) {
-		return PTR_ERR(ptr);
-	}
-	return 0;
+  if (IS_ERR(ptr)) {
+    return PTR_ERR(ptr);
+  }
+  return 0;
 }

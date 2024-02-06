@@ -17,44 +17,44 @@ const char *trim_both(const char *src, size_t *length);
 double strtod_simple(const char *, const char **);
 
 static inline int uitostr(unsigned int n, char *buf) {
-	int ret = 0;
-	unsigned int tmp = n;
-	while (tmp > 0) {
-		tmp /= 10;
-		ret++;
-	}
+  int ret = 0;
+  unsigned int tmp = n;
+  while (tmp > 0) {
+    tmp /= 10;
+    ret++;
+  }
 
-	if (ret == 0) {
-		ret = 1;
-	}
+  if (ret == 0) {
+    ret = 1;
+  }
 
-	int pos = ret;
-	while (pos--) {
-		buf[pos] = (char)(n % 10 + '0');
-		n /= 10;
-	}
-	return ret;
+  int pos = ret;
+  while (pos--) {
+    buf[pos] = (char)(n % 10 + '0');
+    n /= 10;
+  }
+  return ret;
 }
 
 static inline const char *skip_space_const(const char *src) {
-	if (!src) {
-		return NULL;
-	}
-	while (*src && isspace((unsigned char)*src)) {
-		src++;
-	}
-	return src;
+  if (!src) {
+    return NULL;
+  }
+  while (*src && isspace((unsigned char)*src)) {
+    src++;
+  }
+  return src;
 }
 
 static inline char *skip_space_mut(char *src) {
-	if (!src) {
-		return NULL;
-	}
-	while (*src && isspace((unsigned char)*src)) {
-		src++;
-	}
-	return src;
+  if (!src) {
+    return NULL;
+  }
+  while (*src && isspace((unsigned char)*src)) {
+    src++;
+  }
+  return src;
 }
 
 #define skip_space(x)                                                                    \
-	_Generic((x), char * : skip_space_mut, const char * : skip_space_const)(x)
+  _Generic((x), char *: skip_space_mut, const char *: skip_space_const)(x)

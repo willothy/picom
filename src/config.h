@@ -32,313 +32,313 @@ typedef struct session session_t;
 
 /// @brief Possible backends
 enum backend {
-	BKEND_XRENDER,
-	BKEND_GLX,
-	BKEND_XR_GLX_HYBRID,
-	BKEND_DUMMY,
-	BKEND_EGL,
-	NUM_BKEND,
+  BKEND_XRENDER,
+  BKEND_GLX,
+  BKEND_XR_GLX_HYBRID,
+  BKEND_DUMMY,
+  BKEND_EGL,
+  NUM_BKEND,
 };
 
 enum open_window_animation {
-	OPEN_WINDOW_ANIMATION_NONE = 0,
-	OPEN_WINDOW_ANIMATION_FLYIN,
-	OPEN_WINDOW_ANIMATION_SLIDE_UP,
-	OPEN_WINDOW_ANIMATION_SLIDE_DOWN,
-	OPEN_WINDOW_ANIMATION_SLIDE_LEFT,
-	OPEN_WINDOW_ANIMATION_SLIDE_RIGHT,
-	OPEN_WINDOW_ANIMATION_SLIDE_IN,
-	OPEN_WINDOW_ANIMATION_SLIDE_OUT,
-	OPEN_WINDOW_ANIMATION_SLIDE_IN_CENTER,
-	OPEN_WINDOW_ANIMATION_SLIDE_OUT_CENTER,
-	OPEN_WINDOW_ANIMATION_ZOOM,
-	OPEN_WINDOW_ANIMATION_MINIMIZE,
-	OPEN_WINDOW_ANIMATION_SQUEEZE,
-	OPEN_WINDOW_ANIMATION_SQUEEZE_BOTTOM,
-	OPEN_WINDOW_ANIMATION_INVALID,
+  OPEN_WINDOW_ANIMATION_NONE = 0,
+  OPEN_WINDOW_ANIMATION_FLYIN,
+  OPEN_WINDOW_ANIMATION_SLIDE_UP,
+  OPEN_WINDOW_ANIMATION_SLIDE_DOWN,
+  OPEN_WINDOW_ANIMATION_SLIDE_LEFT,
+  OPEN_WINDOW_ANIMATION_SLIDE_RIGHT,
+  OPEN_WINDOW_ANIMATION_SLIDE_IN,
+  OPEN_WINDOW_ANIMATION_SLIDE_OUT,
+  OPEN_WINDOW_ANIMATION_SLIDE_IN_CENTER,
+  OPEN_WINDOW_ANIMATION_SLIDE_OUT_CENTER,
+  OPEN_WINDOW_ANIMATION_ZOOM,
+  OPEN_WINDOW_ANIMATION_MINIMIZE,
+  OPEN_WINDOW_ANIMATION_SQUEEZE,
+  OPEN_WINDOW_ANIMATION_SQUEEZE_BOTTOM,
+  OPEN_WINDOW_ANIMATION_INVALID,
 };
 
 typedef struct win_option_mask {
-	bool shadow : 1;
-	bool fade : 1;
-	bool focus : 1;
-	bool blur_background : 1;
-	bool full_shadow : 1;
-	bool redir_ignore : 1;
-	bool opacity : 1;
-	bool clip_shadow_above : 1;
-	enum open_window_animation animation;
+  bool shadow : 1;
+  bool fade : 1;
+  bool focus : 1;
+  bool blur_background : 1;
+  bool full_shadow : 1;
+  bool redir_ignore : 1;
+  bool opacity : 1;
+  bool clip_shadow_above : 1;
+  enum open_window_animation animation;
 } win_option_mask_t;
 
 typedef struct win_option {
-	bool shadow;
-	bool fade;
-	bool focus;
-	bool blur_background;
-	bool full_shadow;
-	bool redir_ignore;
-	double opacity;
-	bool clip_shadow_above;
-	enum open_window_animation animation;
+  bool shadow;
+  bool fade;
+  bool focus;
+  bool blur_background;
+  bool full_shadow;
+  bool redir_ignore;
+  double opacity;
+  bool clip_shadow_above;
+  enum open_window_animation animation;
 } win_option_t;
 
 enum blur_method {
-	BLUR_METHOD_NONE = 0,
-	BLUR_METHOD_KERNEL,
-	BLUR_METHOD_BOX,
-	BLUR_METHOD_GAUSSIAN,
-	BLUR_METHOD_DUAL_KAWASE,
-	BLUR_METHOD_INVALID,
+  BLUR_METHOD_NONE = 0,
+  BLUR_METHOD_KERNEL,
+  BLUR_METHOD_BOX,
+  BLUR_METHOD_GAUSSIAN,
+  BLUR_METHOD_DUAL_KAWASE,
+  BLUR_METHOD_INVALID,
 };
 
 typedef struct _c2_lptr c2_lptr_t;
 
 enum vblank_scheduler_type {
-	/// X Present extension based vblank events
-	VBLANK_SCHEDULER_PRESENT,
-	/// GLX_SGI_video_sync based vblank events
-	VBLANK_SCHEDULER_SGI_VIDEO_SYNC,
-	/// An invalid scheduler, served as a scheduler count, and
-	/// as a sentinel value.
-	LAST_VBLANK_SCHEDULER,
+  /// X Present extension based vblank events
+  VBLANK_SCHEDULER_PRESENT,
+  /// GLX_SGI_video_sync based vblank events
+  VBLANK_SCHEDULER_SGI_VIDEO_SYNC,
+  /// An invalid scheduler, served as a scheduler count, and
+  /// as a sentinel value.
+  LAST_VBLANK_SCHEDULER,
 };
 
 extern const char *vblank_scheduler_str[];
 
 /// Internal, private options for debugging and development use.
 struct debug_options {
-	/// Try to reduce frame latency by using vblank interval and render time
-	/// estimates. Right now it's not working well across drivers.
-	int smart_frame_pacing;
-	/// Override the vblank scheduler chosen by the compositor.
-	int force_vblank_scheduler;
+  /// Try to reduce frame latency by using vblank interval and render time
+  /// estimates. Right now it's not working well across drivers.
+  int smart_frame_pacing;
+  /// Override the vblank scheduler chosen by the compositor.
+  int force_vblank_scheduler;
 };
 
 /// Structure representing all options.
 typedef struct options {
-	// === Debugging ===
-	bool monitor_repaint;
-	bool print_diagnostics;
-	/// Render to a separate window instead of taking over the screen
-	bool debug_mode;
-	// === General ===
-	/// Use the legacy backends?
-	bool legacy_backends;
-	/// Path to write PID to.
-	char *write_pid_path;
-	/// The backend in use.
-	enum backend backend;
-	/// Whether to sync X drawing with X Sync fence to avoid certain delay
-	/// issues with GLX backend.
-	bool xrender_sync_fence;
-	/// Whether to avoid using stencil buffer under GLX backend. Might be
-	/// unsafe.
-	bool glx_no_stencil;
-	/// Whether to avoid rebinding pixmap on window damage.
-	bool glx_no_rebind_pixmap;
-	/// Custom fragment shader for painting windows, as a string.
-	char *glx_fshader_win_str;
-	/// Whether to detect rounded corners.
-	bool detect_rounded_corners;
-	/// Force painting of window content with blending.
-	bool force_win_blend;
-	/// Resize damage for a specific number of pixels.
-	int resize_damage;
-	/// Whether to unredirect all windows if a full-screen opaque window
-	/// is detected.
-	bool unredir_if_possible;
-	/// List of conditions of windows to ignore as a full-screen window
-	/// when determining if a window could be unredirected.
-	c2_lptr_t *unredir_if_possible_blacklist;
-	/// Delay before unredirecting screen, in milliseconds.
-	long unredir_if_possible_delay;
-	/// Forced redirection setting through D-Bus.
-	switch_t redirected_force;
-	/// Whether to stop painting. Controlled through D-Bus.
-	switch_t stoppaint_force;
-	/// Whether to enable D-Bus support.
-	bool dbus;
-	/// Path to log file.
-	char *logpath;
-	/// Number of cycles to paint in benchmark mode. 0 for disabled.
-	int benchmark;
-	/// Window to constantly repaint in benchmark mode. 0 for full-screen.
-	xcb_window_t benchmark_wid;
-	/// A list of conditions of windows not to paint.
-	c2_lptr_t *paint_blacklist;
-	/// Whether to show all X errors.
-	bool show_all_xerrors;
-	/// Whether to avoid acquiring X Selection.
-	bool no_x_selection;
-	/// Window type option override.
-	win_option_t wintype_option[NUM_WINTYPES];
+  // === Debugging ===
+  bool monitor_repaint;
+  bool print_diagnostics;
+  /// Render to a separate window instead of taking over the screen
+  bool debug_mode;
+  // === General ===
+  /// Use the legacy backends?
+  bool legacy_backends;
+  /// Path to write PID to.
+  char *write_pid_path;
+  /// The backend in use.
+  enum backend backend;
+  /// Whether to sync X drawing with X Sync fence to avoid certain delay
+  /// issues with GLX backend.
+  bool xrender_sync_fence;
+  /// Whether to avoid using stencil buffer under GLX backend. Might be
+  /// unsafe.
+  bool glx_no_stencil;
+  /// Whether to avoid rebinding pixmap on window damage.
+  bool glx_no_rebind_pixmap;
+  /// Custom fragment shader for painting windows, as a string.
+  char *glx_fshader_win_str;
+  /// Whether to detect rounded corners.
+  bool detect_rounded_corners;
+  /// Force painting of window content with blending.
+  bool force_win_blend;
+  /// Resize damage for a specific number of pixels.
+  int resize_damage;
+  /// Whether to unredirect all windows if a full-screen opaque window
+  /// is detected.
+  bool unredir_if_possible;
+  /// List of conditions of windows to ignore as a full-screen window
+  /// when determining if a window could be unredirected.
+  c2_lptr_t *unredir_if_possible_blacklist;
+  /// Delay before unredirecting screen, in milliseconds.
+  long unredir_if_possible_delay;
+  /// Forced redirection setting through D-Bus.
+  switch_t redirected_force;
+  /// Whether to stop painting. Controlled through D-Bus.
+  switch_t stoppaint_force;
+  /// Whether to enable D-Bus support.
+  bool dbus;
+  /// Path to log file.
+  char *logpath;
+  /// Number of cycles to paint in benchmark mode. 0 for disabled.
+  int benchmark;
+  /// Window to constantly repaint in benchmark mode. 0 for full-screen.
+  xcb_window_t benchmark_wid;
+  /// A list of conditions of windows not to paint.
+  c2_lptr_t *paint_blacklist;
+  /// Whether to show all X errors.
+  bool show_all_xerrors;
+  /// Whether to avoid acquiring X Selection.
+  bool no_x_selection;
+  /// Window type option override.
+  win_option_t wintype_option[NUM_WINTYPES];
 
-	// === VSync & software optimization ===
-	/// VSync method to use;
-	bool vsync;
-	/// Whether to use glFinish() instead of glFlush() for (possibly) better
-	/// VSync yet probably higher CPU usage.
-	bool vsync_use_glfinish;
-	/// Whether use damage information to help limit the area to paint
-	bool use_damage;
-	/// Disable frame pacing
-	bool no_frame_pacing;
+  // === VSync & software optimization ===
+  /// VSync method to use;
+  bool vsync;
+  /// Whether to use glFinish() instead of glFlush() for (possibly) better
+  /// VSync yet probably higher CPU usage.
+  bool vsync_use_glfinish;
+  /// Whether use damage information to help limit the area to paint
+  bool use_damage;
+  /// Disable frame pacing
+  bool no_frame_pacing;
 
-	// === Shadow ===
-	/// Red, green and blue tone of the shadow.
-	double shadow_red, shadow_green, shadow_blue;
-	int shadow_radius;
-	int shadow_offset_x, shadow_offset_y;
-	double shadow_opacity;
-	/// argument string to shadow-exclude-reg option
-	char *shadow_exclude_reg_str;
-	/// Shadow blacklist. A linked list of conditions.
-	c2_lptr_t *shadow_blacklist;
-	/// Whether bounding-shaped window should be ignored.
-	bool shadow_ignore_shaped;
-	/// Whether to crop shadow to the very X RandR monitor.
-	bool crop_shadow_to_monitor;
-	/// Don't draw shadow over these windows. A linked list of conditions.
-	c2_lptr_t *shadow_clip_list;
+  // === Shadow ===
+  /// Red, green and blue tone of the shadow.
+  double shadow_red, shadow_green, shadow_blue;
+  int shadow_radius;
+  int shadow_offset_x, shadow_offset_y;
+  double shadow_opacity;
+  /// argument string to shadow-exclude-reg option
+  char *shadow_exclude_reg_str;
+  /// Shadow blacklist. A linked list of conditions.
+  c2_lptr_t *shadow_blacklist;
+  /// Whether bounding-shaped window should be ignored.
+  bool shadow_ignore_shaped;
+  /// Whether to crop shadow to the very X RandR monitor.
+  bool crop_shadow_to_monitor;
+  /// Don't draw shadow over these windows. A linked list of conditions.
+  c2_lptr_t *shadow_clip_list;
 
-	// === Fading ===
-	/// How much to fade in in a single fading step.
-	double fade_in_step;
-	/// How much to fade out in a single fading step.
-	double fade_out_step;
-	/// Fading time delta. In milliseconds.
-	int fade_delta;
-	/// Whether to disable fading on window open/close.
-	bool no_fading_openclose;
-	/// Whether to disable fading on ARGB managed destroyed windows.
-	bool no_fading_destroyed_argb;
-	/// Fading blacklist. A linked list of conditions.
-	c2_lptr_t *fade_blacklist;
+  // === Fading ===
+  /// How much to fade in in a single fading step.
+  double fade_in_step;
+  /// How much to fade out in a single fading step.
+  double fade_out_step;
+  /// Fading time delta. In milliseconds.
+  int fade_delta;
+  /// Whether to disable fading on window open/close.
+  bool no_fading_openclose;
+  /// Whether to disable fading on ARGB managed destroyed windows.
+  bool no_fading_destroyed_argb;
+  /// Fading blacklist. A linked list of conditions.
+  c2_lptr_t *fade_blacklist;
 
-	// === Animations ===
-	/// Whether to do window animations
-	bool animations;
-	/// Which animation to run when opening a window
-	enum open_window_animation animation_for_open_window;
-	/// Which animation to run when opening a transient window
-	enum open_window_animation animation_for_transient_window;
-	/// Which animation to run when unmapping a window
-	enum open_window_animation animation_for_unmap_window;
-	/// Which animation to run when swapping to new tag
-	enum open_window_animation animation_for_next_tag;
-	/// Which animation to run for old tag
-	enum open_window_animation animation_for_prev_tag;
-	/// Spring stiffness for animation
-	double animation_stiffness;
-	/// Spring stiffness for current tag animation
-	double animation_stiffness_tag_change;
-	/// Window mass for animation
-	double animation_window_mass;
-	/// Animation dampening
-	double animation_dampening;
-	/// Whether to clamp animations
-	bool animation_clamping;
-	/// Animation blacklist. A linked list of conditions.
-	c2_lptr_t *animation_blacklist;
-	/// TODO: open/close animations
+  // === Animations ===
+  /// Whether to do window animations
+  bool animations;
+  /// Which animation to run when opening a window
+  enum open_window_animation animation_for_open_window;
+  /// Which animation to run when opening a transient window
+  enum open_window_animation animation_for_transient_window;
+  /// Which animation to run when unmapping a window
+  enum open_window_animation animation_for_unmap_window;
+  /// Which animation to run when swapping to new tag
+  enum open_window_animation animation_for_next_tag;
+  /// Which animation to run for old tag
+  enum open_window_animation animation_for_prev_tag;
+  /// Spring stiffness for animation
+  double animation_stiffness;
+  /// Spring stiffness for current tag animation
+  double animation_stiffness_tag_change;
+  /// Window mass for animation
+  double animation_window_mass;
+  /// Animation dampening
+  double animation_dampening;
+  /// Whether to clamp animations
+  bool animation_clamping;
+  /// Animation blacklist. A linked list of conditions.
+  c2_lptr_t *animation_blacklist;
+  /// TODO: open/close animations
 
-	// === Opacity ===
-	/// Default opacity for inactive windows.
-	/// 32-bit integer with the format of _NET_WM_WINDOW_OPACITY.
-	double inactive_opacity;
-	/// Default opacity for inactive windows.
-	double active_opacity;
-	/// Whether inactive_opacity overrides the opacity set by window
-	/// attributes.
-	bool inactive_opacity_override;
-	/// Frame opacity. Relative to window opacity, also affects shadow
-	/// opacity.
-	double frame_opacity;
-	/// Whether to detect _NET_WM_WINDOW_OPACITY on client windows. Used on window
-	/// managers that don't pass _NET_WM_WINDOW_OPACITY to frame windows.
-	bool detect_client_opacity;
+  // === Opacity ===
+  /// Default opacity for inactive windows.
+  /// 32-bit integer with the format of _NET_WM_WINDOW_OPACITY.
+  double inactive_opacity;
+  /// Default opacity for inactive windows.
+  double active_opacity;
+  /// Whether inactive_opacity overrides the opacity set by window
+  /// attributes.
+  bool inactive_opacity_override;
+  /// Frame opacity. Relative to window opacity, also affects shadow
+  /// opacity.
+  double frame_opacity;
+  /// Whether to detect _NET_WM_WINDOW_OPACITY on client windows. Used on window
+  /// managers that don't pass _NET_WM_WINDOW_OPACITY to frame windows.
+  bool detect_client_opacity;
 
-	// === Other window processing ===
-	/// Blur method for background of semi-transparent windows
-	enum blur_method blur_method;
-	// Size of the blur kernel
-	int blur_radius;
-	// Standard deviation for the gaussian blur
-	double blur_deviation;
-	// Strength of the dual_kawase blur
-	int blur_strength;
-	/// Whether to blur background when the window frame is not opaque.
-	/// Implies blur_background.
-	bool blur_background_frame;
-	/// Whether to use fixed blur strength instead of adjusting according
-	/// to window opacity.
-	bool blur_background_fixed;
-	/// Background blur blacklist. A linked list of conditions.
-	c2_lptr_t *blur_background_blacklist;
-	/// Blur convolution kernel.
-	struct conv **blur_kerns;
-	/// Number of convolution kernels
-	int blur_kernel_count;
-	/// Custom fragment shader for painting windows
-	char *window_shader_fg;
-	/// Rules to change custom fragment shader for painting windows.
-	c2_lptr_t *window_shader_fg_rules;
-	/// How much to dim an inactive window. 0.0 - 1.0, 0 to disable.
-	double inactive_dim;
-	/// Whether to use fixed inactive dim opacity, instead of deciding
-	/// based on window opacity.
-	bool inactive_dim_fixed;
-	/// Conditions of windows to have inverted colors.
-	c2_lptr_t *invert_color_list;
-	/// Rules to change window opacity.
-	c2_lptr_t *opacity_rules;
-	/// Limit window brightness
-	double max_brightness;
-	// Radius of rounded window corners
-	int corner_radius;
-	/// Rounded corners blacklist. A linked list of conditions.
-	c2_lptr_t *rounded_corners_blacklist;
-	/// Rounded corner rules. A linked list of conditions.
-	c2_lptr_t *corner_radius_rules;
+  // === Other window processing ===
+  /// Blur method for background of semi-transparent windows
+  enum blur_method blur_method;
+  // Size of the blur kernel
+  int blur_radius;
+  // Standard deviation for the gaussian blur
+  double blur_deviation;
+  // Strength of the dual_kawase blur
+  int blur_strength;
+  /// Whether to blur background when the window frame is not opaque.
+  /// Implies blur_background.
+  bool blur_background_frame;
+  /// Whether to use fixed blur strength instead of adjusting according
+  /// to window opacity.
+  bool blur_background_fixed;
+  /// Background blur blacklist. A linked list of conditions.
+  c2_lptr_t *blur_background_blacklist;
+  /// Blur convolution kernel.
+  struct conv **blur_kerns;
+  /// Number of convolution kernels
+  int blur_kernel_count;
+  /// Custom fragment shader for painting windows
+  char *window_shader_fg;
+  /// Rules to change custom fragment shader for painting windows.
+  c2_lptr_t *window_shader_fg_rules;
+  /// How much to dim an inactive window. 0.0 - 1.0, 0 to disable.
+  double inactive_dim;
+  /// Whether to use fixed inactive dim opacity, instead of deciding
+  /// based on window opacity.
+  bool inactive_dim_fixed;
+  /// Conditions of windows to have inverted colors.
+  c2_lptr_t *invert_color_list;
+  /// Rules to change window opacity.
+  c2_lptr_t *opacity_rules;
+  /// Limit window brightness
+  double max_brightness;
+  // Radius of rounded window corners
+  int corner_radius;
+  /// Rounded corners blacklist. A linked list of conditions.
+  c2_lptr_t *rounded_corners_blacklist;
+  /// Rounded corner rules. A linked list of conditions.
+  c2_lptr_t *corner_radius_rules;
 
-	// === Focus related ===
-	/// Whether to try to detect WM windows and mark them as focused.
-	bool mark_wmwin_focused;
-	/// Whether to mark override-redirect windows as focused.
-	bool mark_ovredir_focused;
-	/// Whether to use EWMH _NET_ACTIVE_WINDOW to find active window.
-	bool use_ewmh_active_win;
-	/// A list of windows always to be considered focused.
-	c2_lptr_t *focus_blacklist;
-	/// Whether to do window grouping with <code>WM_TRANSIENT_FOR</code>.
-	bool detect_transient;
-	/// Whether to do window grouping with <code>WM_CLIENT_LEADER</code>.
-	bool detect_client_leader;
+  // === Focus related ===
+  /// Whether to try to detect WM windows and mark them as focused.
+  bool mark_wmwin_focused;
+  /// Whether to mark override-redirect windows as focused.
+  bool mark_ovredir_focused;
+  /// Whether to use EWMH _NET_ACTIVE_WINDOW to find active window.
+  bool use_ewmh_active_win;
+  /// A list of windows always to be considered focused.
+  c2_lptr_t *focus_blacklist;
+  /// Whether to do window grouping with <code>WM_TRANSIENT_FOR</code>.
+  bool detect_transient;
+  /// Whether to do window grouping with <code>WM_CLIENT_LEADER</code>.
+  bool detect_client_leader;
 
-	// === Calculated ===
-	/// Whether we need to track window leaders.
-	bool track_leader;
+  // === Calculated ===
+  /// Whether we need to track window leaders.
+  bool track_leader;
 
-	// Don't use EWMH to detect fullscreen applications
-	bool no_ewmh_fullscreen;
+  // Don't use EWMH to detect fullscreen applications
+  bool no_ewmh_fullscreen;
 
-	// Make transparent windows clip other windows, instead of blending on top of
-	// them
-	bool transparent_clipping;
+  // Make transparent windows clip other windows, instead of blending on top of
+  // them
+  bool transparent_clipping;
 
-	// Enable fading for next tag
-	bool enable_fading_next_tag;
+  // Enable fading for next tag
+  bool enable_fading_next_tag;
 
-	// Enable fading for prev tag
-	bool enable_fading_prev_tag;
+  // Enable fading for prev tag
+  bool enable_fading_prev_tag;
 
-	/// A list of conditions of windows to which transparent clipping
-	/// should not apply
-	c2_lptr_t *transparent_clipping_blacklist;
+  /// A list of conditions of windows to which transparent clipping
+  /// should not apply
+  c2_lptr_t *transparent_clipping_blacklist;
 
-	bool dithered_present;
+  bool dithered_present;
 
-	struct debug_options debug_options;
+  struct debug_options debug_options;
 } options_t;
 
 extern const char *const BACKEND_STRS[NUM_BKEND + 1];
@@ -389,36 +389,36 @@ char *parse_config(options_t *, const char *config_file, bool *shadow_enable,
  * Parse a backend option argument.
  */
 static inline attr_pure enum backend parse_backend(const char *str) {
-	for (enum backend i = 0; BACKEND_STRS[i]; ++i) {
-		if (!strcasecmp(str, BACKEND_STRS[i])) {
-			return i;
-		}
-	}
-	// Keep compatibility with an old revision containing a spelling mistake...
-	if (!strcasecmp(str, "xr_glx_hybird")) {
-		log_warn("backend xr_glx_hybird should be xr_glx_hybrid, the misspelt "
-		         "version will be removed soon.");
-		return BKEND_XR_GLX_HYBRID;
-	}
-	// cju wants to use dashes
-	if (!strcasecmp(str, "xr-glx-hybrid")) {
-		log_warn("backend xr-glx-hybrid should be xr_glx_hybrid, the alternative "
-		         "version will be removed soon.");
-		return BKEND_XR_GLX_HYBRID;
-	}
-	log_error("Invalid backend argument: %s", str);
-	return NUM_BKEND;
+  for (enum backend i = 0; BACKEND_STRS[i]; ++i) {
+    if (!strcasecmp(str, BACKEND_STRS[i])) {
+      return i;
+    }
+  }
+  // Keep compatibility with an old revision containing a spelling mistake...
+  if (!strcasecmp(str, "xr_glx_hybird")) {
+    log_warn("backend xr_glx_hybird should be xr_glx_hybrid, the misspelt "
+             "version will be removed soon.");
+    return BKEND_XR_GLX_HYBRID;
+  }
+  // cju wants to use dashes
+  if (!strcasecmp(str, "xr-glx-hybrid")) {
+    log_warn("backend xr-glx-hybrid should be xr_glx_hybrid, the alternative "
+             "version will be removed soon.");
+    return BKEND_XR_GLX_HYBRID;
+  }
+  log_error("Invalid backend argument: %s", str);
+  return NUM_BKEND;
 }
 
 /**
  * Parse a VSync option argument.
  */
 static inline bool parse_vsync(const char *str) {
-	if (strcmp(str, "no") == 0 || strcmp(str, "none") == 0 ||
-	    strcmp(str, "false") == 0 || strcmp(str, "nah") == 0) {
-		return false;
-	}
-	return true;
+  if (strcmp(str, "no") == 0 || strcmp(str, "none") == 0 || strcmp(str, "false") == 0 ||
+      strcmp(str, "nah") == 0) {
+    return false;
+  }
+  return true;
 }
 
 // vim: set noet sw=8 ts=8 :

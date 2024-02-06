@@ -21,108 +21,106 @@ struct atom;
 
 /// Structure representing Window property value.
 typedef struct winprop {
-	union {
-		void *ptr;
-		int8_t *p8;
-		int16_t *p16;
-		int32_t *p32;
-		uint32_t *c32;        // 32bit cardinal
-	};
-	unsigned long nitems;
-	xcb_atom_t type;
-	int format;
+  union {
+    void *ptr;
+    int8_t *p8;
+    int16_t *p16;
+    int32_t *p32;
+    uint32_t *c32;        // 32bit cardinal
+  };
+  unsigned long nitems;
+  xcb_atom_t type;
+  int format;
 
-	xcb_get_property_reply_t *r;
+  xcb_get_property_reply_t *r;
 } winprop_t;
 
 typedef struct winprop_info {
-	xcb_atom_t type;
-	uint8_t format;
-	uint32_t length;
+  xcb_atom_t type;
+  uint8_t format;
+  uint32_t length;
 } winprop_info_t;
 
 struct xvisual_info {
-	/// Bit depth of the red component
-	int red_size;
-	/// Bit depth of the green component
-	int green_size;
-	/// Bit depth of the blue component
-	int blue_size;
-	/// Bit depth of the alpha component
-	int alpha_size;
-	/// The depth of X visual
-	int visual_depth;
+  /// Bit depth of the red component
+  int red_size;
+  /// Bit depth of the green component
+  int green_size;
+  /// Bit depth of the blue component
+  int blue_size;
+  /// Bit depth of the alpha component
+  int alpha_size;
+  /// The depth of X visual
+  int visual_depth;
 
-	xcb_visualid_t visual;
+  xcb_visualid_t visual;
 };
 
 enum pending_reply_action {
-	PENDING_REPLY_ACTION_IGNORE,
-	PENDING_REPLY_ACTION_ABORT,
-	PENDING_REPLY_ACTION_DEBUG_ABORT,
+  PENDING_REPLY_ACTION_IGNORE,
+  PENDING_REPLY_ACTION_ABORT,
+  PENDING_REPLY_ACTION_DEBUG_ABORT,
 };
 
 typedef struct pending_reply {
-	struct pending_reply *next;
-	unsigned long sequence;
-	enum pending_reply_action action;
+  struct pending_reply *next;
+  unsigned long sequence;
+  enum pending_reply_action action;
 } pending_reply_t;
 
 struct x_connection {
-	/// XCB connection.
-	xcb_connection_t *c;
-	/// Display in use.
-	Display *dpy;
-	/// Head pointer of the error ignore linked list.
-	pending_reply_t *pending_reply_head;
-	/// Pointer to the <code>next</code> member of tail element of the error
-	/// ignore linked list.
-	pending_reply_t **pending_reply_tail;
-	/// Previous handler of X errors
-	XErrorHandler previous_xerror_handler;
-	/// Default screen
-	int screen;
-	/// Information about the default screen
-	xcb_screen_t *screen_info;
+  /// XCB connection.
+  xcb_connection_t *c;
+  /// Display in use.
+  Display *dpy;
+  /// Head pointer of the error ignore linked list.
+  pending_reply_t *pending_reply_head;
+  /// Pointer to the <code>next</code> member of tail element of the error
+  /// ignore linked list.
+  pending_reply_t **pending_reply_tail;
+  /// Previous handler of X errors
+  XErrorHandler previous_xerror_handler;
+  /// Default screen
+  int screen;
+  /// Information about the default screen
+  xcb_screen_t *screen_info;
 };
 
 /// Monitor info
 struct x_monitors {
-	int count;
-	region_t *regions;
+  int count;
+  region_t *regions;
 };
 
 #define XCB_AWAIT_VOID(func, c, ...)                                                     \
-	({                                                                               \
-		bool __success = true;                                                   \
-		__auto_type __e = xcb_request_check(c, func##_checked(c, __VA_ARGS__));  \
-		if (__e) {                                                               \
-			x_print_error(__e->sequence, __e->major_code, __e->minor_code,   \
-			              __e->error_code);                                  \
-			free(__e);                                                       \
-			__success = false;                                               \
-		}                                                                        \
-		__success;                                                               \
-	})
+  ({                                                                                     \
+    bool __success = true;                                                               \
+    __auto_type __e = xcb_request_check(c, func##_checked(c, __VA_ARGS__));              \
+    if (__e) {                                                                           \
+      x_print_error(__e->sequence, __e->major_code, __e->minor_code, __e->error_code);   \
+      free(__e);                                                                         \
+      __success = false;                                                                 \
+    }                                                                                    \
+    __success;                                                                           \
+  })
 
 #define XCB_AWAIT(func, c, ...)                                                          \
-	({                                                                               \
-		xcb_generic_error_t *__e = NULL;                                         \
-		__auto_type __r = func##_reply(c, func(c, __VA_ARGS__), &__e);           \
-		if (__e) {                                                               \
-			x_print_error(__e->sequence, __e->major_code, __e->minor_code,   \
-			              __e->error_code);                                  \
-			free(__e);                                                       \
-		}                                                                        \
-		__r;                                                                     \
-	})
+  ({                                                                                     \
+    xcb_generic_error_t *__e = NULL;                                                     \
+    __auto_type __r = func##_reply(c, func(c, __VA_ARGS__), &__e);                       \
+    if (__e) {                                                                           \
+      x_print_error(__e->sequence, __e->major_code, __e->minor_code, __e->error_code);   \
+      free(__e);                                                                         \
+    }                                                                                    \
+    __r;                                                                                 \
+  })
 
 #define log_debug_x_error(e, fmt, ...)                                                   \
-	LOG(DEBUG, fmt " (%s)", ##__VA_ARGS__, x_strerror(e))
+  LOG(DEBUG, fmt " (%s)", ##__VA_ARGS__, x_strerror(e))
 #define log_error_x_error(e, fmt, ...)                                                   \
-	LOG(ERROR, fmt " (%s)", ##__VA_ARGS__, x_strerror(e))
+  LOG(ERROR, fmt " (%s)", ##__VA_ARGS__, x_strerror(e))
 #define log_fatal_x_error(e, fmt, ...)                                                   \
-	LOG(FATAL, fmt " (%s)", ##__VA_ARGS__, x_strerror(e))
+  LOG(FATAL, fmt " (%s)", ##__VA_ARGS__, x_strerror(e))
 
 // xcb-render specific macros
 #define XFIXED_TO_DOUBLE(value) (((double)(value)) / 65536)
@@ -130,25 +128,25 @@ struct x_monitors {
 
 /// Wraps x_new_id. abort the program if x_new_id returns error
 static inline uint32_t x_new_id(struct x_connection *c) {
-	auto ret = xcb_generate_id(c->c);
-	if (ret == (uint32_t)-1) {
-		log_fatal("We seems to have run of XIDs. This is either a bug in the X "
-		          "server, or a resource leakage in the compositor. Please open "
-		          "an issue about this problem. The compositor will die.");
-		abort();
-	}
-	return ret;
+  auto ret = xcb_generate_id(c->c);
+  if (ret == (uint32_t)-1) {
+    log_fatal("We seems to have run of XIDs. This is either a bug in the X "
+              "server, or a resource leakage in the compositor. Please open "
+              "an issue about this problem. The compositor will die.");
+    abort();
+  }
+  return ret;
 }
 
 static void set_reply_action(struct x_connection *c, uint32_t sequence,
                              enum pending_reply_action action) {
-	auto i = cmalloc(pending_reply_t);
+  auto i = cmalloc(pending_reply_t);
 
-	i->sequence = sequence;
-	i->next = 0;
-	i->action = action;
-	*c->pending_reply_tail = i;
-	c->pending_reply_tail = &i->next;
+  i->sequence = sequence;
+  i->next = 0;
+  i->action = action;
+  *c->pending_reply_tail = i;
+  c->pending_reply_tail = &i->next;
 }
 
 /**
@@ -156,37 +154,37 @@ static void set_reply_action(struct x_connection *c, uint32_t sequence,
  */
 static inline void attr_unused set_ignore_cookie(struct x_connection *c,
                                                  xcb_void_cookie_t cookie) {
-	set_reply_action(c, cookie.sequence, PENDING_REPLY_ACTION_IGNORE);
+  set_reply_action(c, cookie.sequence, PENDING_REPLY_ACTION_IGNORE);
 }
 
 static inline void attr_unused set_cant_fail_cookie(struct x_connection *c,
                                                     xcb_void_cookie_t cookie) {
-	set_reply_action(c, cookie.sequence, PENDING_REPLY_ACTION_ABORT);
+  set_reply_action(c, cookie.sequence, PENDING_REPLY_ACTION_ABORT);
 }
 
 static inline void attr_unused set_debug_cant_fail_cookie(struct x_connection *c,
                                                           xcb_void_cookie_t cookie) {
 #ifndef NDEBUG
-	set_reply_action(c, cookie.sequence, PENDING_REPLY_ACTION_DEBUG_ABORT);
+  set_reply_action(c, cookie.sequence, PENDING_REPLY_ACTION_DEBUG_ABORT);
 #else
-	(void)c;
-	(void)cookie;
+  (void)c;
+  (void)cookie;
 #endif
 }
 
 static inline void attr_unused free_x_connection(struct x_connection *c) {
-	pending_reply_t *next = NULL;
-	for (auto ign = c->pending_reply_head; ign; ign = next) {
-		next = ign->next;
+  pending_reply_t *next = NULL;
+  for (auto ign = c->pending_reply_head; ign; ign = next) {
+    next = ign->next;
 
-		free(ign);
-	}
+    free(ign);
+  }
 
-	// Reset head and tail
-	c->pending_reply_head = NULL;
-	c->pending_reply_tail = &c->pending_reply_head;
+  // Reset head and tail
+  c->pending_reply_head = NULL;
+  c->pending_reply_tail = &c->pending_reply_head;
 
-	XSetErrorHandler(c->previous_xerror_handler);
+  XSetErrorHandler(c->previous_xerror_handler);
 }
 
 /// Initialize x_connection struct from an Xlib Display.
@@ -215,7 +213,7 @@ void x_handle_error(struct x_connection *c, xcb_generic_error_t *ev);
  * libX11
  */
 static inline void x_sync(struct x_connection *c) {
-	free(xcb_get_input_focus_reply(c->c, xcb_get_input_focus(c->c), NULL));
+  free(xcb_get_input_focus_reply(c->c, xcb_get_input_focus(c->c), NULL));
 }
 
 /**
@@ -242,7 +240,7 @@ winprop_t x_get_prop_with_offset(const struct x_connection *c, xcb_window_t w, x
 static inline winprop_t
 x_get_prop(const struct x_connection *c, xcb_window_t wid, xcb_atom_t atom, int length,
            xcb_atom_t rtype, int rformat) {
-	return x_get_prop_with_offset(c, wid, atom, 0L, length, rtype, rformat);
+  return x_get_prop_with_offset(c, wid, atom, 0L, length, rtype, rformat);
 }
 
 /// Get the type, format and size in bytes of a window's specific attribute.
@@ -251,10 +249,10 @@ winprop_info_t x_get_prop_info(const struct x_connection *c, xcb_window_t w, xcb
 /// Discard all X events in queue or in flight. Should only be used when the server is
 /// grabbed
 static inline void x_discard_events(struct x_connection *c) {
-	xcb_generic_event_t *e;
-	while ((e = xcb_poll_for_event(c->c))) {
-		free(e);
-	}
+  xcb_generic_event_t *e;
+  while ((e = xcb_poll_for_event(c->c))) {
+    free(e);
+  }
 }
 
 /**
@@ -362,13 +360,13 @@ xcb_pixmap_t x_create_pixmap(struct x_connection *, uint8_t depth, int width, in
  * @param pprop pointer to the <code>winprop_t</code> to free.
  */
 static inline void free_winprop(winprop_t *pprop) {
-	// Empty the whole structure to avoid possible issues
-	if (pprop->r) {
-		free(pprop->r);
-	}
-	pprop->ptr = NULL;
-	pprop->r = NULL;
-	pprop->nitems = 0;
+  // Empty the whole structure to avoid possible issues
+  if (pprop->r) {
+    free(pprop->r);
+  }
+  pprop->ptr = NULL;
+  pprop->r = NULL;
+  pprop->nitems = 0;
 }
 
 /// Get the back pixmap of the root window
@@ -381,9 +379,9 @@ bool x_is_root_back_pixmap_atom(struct atom *atoms, xcb_atom_t atom);
 bool x_fence_sync(struct x_connection *, xcb_sync_fence_t);
 
 struct x_convolution_kernel {
-	int size;
-	int capacity;
-	xcb_render_fixed_t kernel[];
+  int size;
+  int capacity;
+  xcb_render_fixed_t kernel[];
 };
 
 /**

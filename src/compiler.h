@@ -130,5 +130,5 @@ typedef unsigned long ulong;
 typedef unsigned int uint;
 
 static inline int attr_const popcntul(unsigned long a) {
-	return __builtin_popcountl(a);
+  return __builtin_popcountl(a);
 }

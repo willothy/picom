@@ -18,30 +18,30 @@ typedef struct backend_base backend_t;
 struct backend_operations;
 
 struct dual_kawase_params {
-	/// Number of downsample passes
-	int iterations;
-	/// Pixel offset for down- and upsample
-	float offset;
-	/// Save area around blur target (@ref resize_width, @ref resize_height)
-	int expand;
+  /// Number of downsample passes
+  int iterations;
+  /// Pixel offset for down- and upsample
+  float offset;
+  /// Save area around blur target (@ref resize_width, @ref resize_height)
+  int expand;
 };
 
 struct backend_image_inner_base {
-	int refcount;
-	bool has_alpha;
+  int refcount;
+  bool has_alpha;
 };
 
 struct backend_image {
-	// Backend dependent inner image data
-	struct backend_image_inner_base *inner;
-	double opacity;
-	double dim;
-	double max_brightness;
-	double corner_radius;
-	// Effective size of the image
-	int ewidth, eheight;
-	bool color_inverted;
-	int border_width;
+  // Backend dependent inner image data
+  struct backend_image_inner_base *inner;
+  double opacity;
+  double dim;
+  double max_brightness;
+  double corner_radius;
+  // Effective size of the image
+  int ewidth, eheight;
+  bool color_inverted;
+  int border_width;
 };
 
 bool build_shadow(struct x_connection *, double opacity, int width, int height,
