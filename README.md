@@ -34,6 +34,8 @@ Changes I am considering / planning:
     outlives the "session" (meaning the `session_t`, not the X session.
   - Move configuration entirely into Lua runtime
     - LuaJIT should make perf cost for this tolerable
+- Porting event loop code to use Libuv instead of Libev,
+  or maybe Tokio if I end up using Rust.
 - Moving to either Cmake or the Zig build system (unlikely, I hate messing with C build systems)
 - Porting some of this to Zig, Go or Rust (if I have time, this could be fun - probably would use Rust)
 
