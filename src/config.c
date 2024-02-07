@@ -873,6 +873,7 @@ enum open_window_animation parse_open_window_animation(const char *src) {
     return OPEN_WINDOW_ANIMATION_SQUEEZE_BOTTOM;
   }
 
+  log_error("Unknown open window animation: %s", src);
   return OPEN_WINDOW_ANIMATION_INVALID;
 }
 
@@ -1122,6 +1123,62 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
   OPT(animation_window_mass, OPT_TDOUBLE);
   OPT(animation_dampening, OPT_TDOUBLE);
 
+  char *animation_for_open_window = NULL;
+  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_open_window", true,
+                                   &animation_for_open_window) &&
+      animation_for_open_window != NULL) {
+
+    opt->animation_for_open_window = parse_open_window_animation(animation_for_open_window);
+    if (opt->animation_for_open_window == OPEN_WINDOW_ANIMATION_INVALID) {
+      return false;
+    }
+  }
+
+  char *animation_for_unmap_window = NULL;
+  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_unmap_window", true,
+                                   &animation_for_unmap_window) &&
+      animation_for_unmap_window != NULL) {
+
+    opt->animation_for_unmap_window = parse_open_window_animation(animation_for_unmap_window);
+    if (opt->animation_for_unmap_window == OPEN_WINDOW_ANIMATION_INVALID) {
+      return false;
+    }
+  }
+
+  char *animation_for_transient_window = NULL;
+  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_transient_window", true,
+                                   &animation_for_transient_window) &&
+      animation_for_transient_window != NULL) {
+    opt->animation_for_transient_window =
+        parse_open_window_animation(animation_for_transient_window);
+    if (opt->animation_for_transient_window == OPEN_WINDOW_ANIMATION_INVALID) {
+      return false;
+    }
+  }
+
+  char *animation_for_next_tag = NULL;
+  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_next_tag", true,
+                                   &animation_for_next_tag) &&
+      animation_for_next_tag != NULL) {
+    opt->animation_for_next_tag = parse_open_window_animation(animation_for_next_tag);
+    if (opt->animation_for_next_tag == OPEN_WINDOW_ANIMATION_INVALID) {
+      return false;
+    }
+  }
+
+  char *animation_for_prev_tag = NULL;
+  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_prev_tag", true,
+                                   &animation_for_prev_tag) &&
+      animation_for_prev_tag != NULL) {
+    opt->animation_for_prev_tag = parse_open_window_animation(animation_for_prev_tag);
+    if (opt->animation_for_prev_tag == OPEN_WINDOW_ANIMATION_INVALID) {
+      return false;
+    }
+  }
+
+  OPT(enable_fading_next_tag, OPT_TBOOLEAN);
+  OPT(enable_fading_prev_tag, OPT_TBOOLEAN);
+
   // opacity
   OPT(inactive_opacity, OPT_TDOUBLE);
   OPT(inactive_opacity_override, OPT_TBOOLEAN);
@@ -1155,7 +1212,7 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
   // defaults for now
   result->fading_enable = true;
   result->shadow_enable = true;
-  // parse_config_libconfig(&{0}, config, &result->shadow_enable, &result->fading_enable,
+  // parse_config_libconfig(opt, config, &result->shadow_enable, &result->fading_enable,
   //                        &result->kernel_hasneg, (win_option_mask_t
   //                        *)&result->winopt_mask);
 
