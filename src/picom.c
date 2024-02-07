@@ -2362,6 +2362,11 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
     return NULL;
   }
 
+  // TODO(willothy): move to main function, memcpy from global config at top
+  // of parse_config to copy global defaults / cli-set opts to ps->o.
+  // We shouldn't need to re-parse the cmdline opts every refresh, and
+  // also shouldn't need argc/argv this far into execution.
+  //
   // Parse all of the rest command line options
   if (!get_cfg(&ps->o, argc, argv, &config_res)) {
     log_fatal("Failed to get configuration, usually mean you have specified "
