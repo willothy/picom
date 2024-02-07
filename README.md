@@ -1,4 +1,4 @@
-picom
+picom (luacomp?)
 =====
 
 > NOTE (willothy) <br>
@@ -16,15 +16,28 @@ Changes I (willothy) have made:
 
 - Ported some fixes over from [compfy](https://github.com/allusive-dev/compfy)
 - Hacked around to fix some animation issues
+- Embed LuaJIT for configuration
 
 Changes that I am working on:
 
-- Embedding LuaJIT for configuration, and potentially scripting
+- Expand Lua configuration to include blacklists
+- Expand Lua configuration to include wintype rules
 
-Changes I am considering:
+Changes I am considering / planning:
 
+- Allowing animations to be implemented as Lua functions
+- FFI interface for rules or event handling via Lua
+- Better error reporting (use notify-send or similar)
+- Graceful exits on hot-reload errors
+  - This is trivial with Lua implemented, since the Lua state
+    outlives the "session" (meaning the `session_t`, not the X session.
+  - Move configuration entirely into Lua runtime
+    - LuaJIT should make perf cost for this tolerable
 - Moving to either Cmake or the Zig build system (unlikely, I hate messing with C build systems)
 - Porting some of this to Zig, Go or Rust (if I have time, this could be fun - probably would use Rust)
+
+> Willothy: Everything below this point was written by prior contributors
+> and may be outdated or completely innacurate since the switch to Lua.
 
 __picom__ is a compositor for X, and a [fork of Compton](History.md).
 
