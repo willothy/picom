@@ -22,13 +22,15 @@
 <!-- Please also include the output of `picom --diagnostics` -->
 </details>
 
-### Configuration:
+### Configuration
+
 <details>
-    <summary>Configuration file</summary>
+<summary>Configuration file</summary>
 
 ```
 // Paste your configuration here
 ```
+
 </details>
 
 ### Steps of reproduction
