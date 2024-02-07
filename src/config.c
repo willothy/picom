@@ -3,13 +3,11 @@
 // Copyright (c) 2013 Richard Grenville <pyxlcy@gmail.com>
 
 #include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -873,7 +871,7 @@ enum open_window_animation parse_open_window_animation(const char *src) {
     return OPEN_WINDOW_ANIMATION_SQUEEZE_BOTTOM;
   }
 
-  log_error("Unknown open window animation: %s", src);
+  log_error("Unknown window animation: %s", src);
   return OPEN_WINDOW_ANIMATION_INVALID;
 }
 
@@ -1094,29 +1092,98 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
     return false;
   }
 
-  // if (!lua_istable(L, -1)) {
-  //   log_error("Config file must return a table");
-  //   free(config_path);
-  //   return true;
-  // }
-
   result->file_path = config_path;
 
   parse_config_libconfig(opt, config, &result->shadow_enable, &result->fading_enable,
                          &result->kernel_hasneg, (win_option_mask_t *)&result->winopt_mask);
 
-  lua_getglobal(L, "backend");
-  char *backend = NULL;
-  if (pilua_check_primitive_option(L, OPT_TSTRING, "backend", true, &backend) &&
-      backend != NULL) {
-    opt->backend = parse_backend(backend);
+#define OPT(name, type) (pilua_check_primitive_option(L, type, #name, true, &opt->name))
+#define REQ(name, type) (pilua_check_primitive_option(L, type, #name, false, &opt->name))
+
+#define PARSED(name, type, check)                                                        \
+  do {                                                                                   \
+    void *ch = NULL;                                                                     \
+    OptValueType ty = (type);                                                            \
+    if (pilua_check_primitive_option(L, ty, #name, true, &ch) &&                         \
+        (ch != NULL || ty != OPT_TSTRING)) {                                             \
+      check                                                                              \
+    }                                                                                    \
+  } while (0)
+
+#define ANIM(name)                                                                       \
+  PARSED(name, OPT_TSTRING, {                                                            \
+    enum open_window_animation anim = parse_open_window_animation((char *)ch);           \
+    if (anim == OPEN_WINDOW_ANIMATION_INVALID) {                                         \
+      return false;                                                                      \
+      (void)opt->name; /* For LSP */                                                     \
+    }                                                                                    \
+    opt->name = anim;                                                                    \
+  })
+
+  // general
+  PARSED(backend, OPT_TSTRING, {
+    opt->backend = parse_backend((char *)ch);
     if (opt->backend == NUM_BKEND) {
       return false;
     }
-  }
+  });
 
-#define OPT(name, type) (pilua_check_primitive_option(L, type, #name, true, &opt->name))
-#define REQ(name, type) (pilua_check_primitive_option(L, type, #name, false, &opt->name))
+  PARSED(log_level, OPT_TSTRING, {
+    enum log_level level = string_to_log_level((char *)ch);
+    if (level == LOG_LEVEL_INVALID) {
+      log_warn("Invalid log level, defaults to WARN");
+    } else {
+      log_set_level_tls(level);
+    }
+  });
+
+  PARSED(log_file, OPT_TSTRING, {
+    if (*((char *)ch) != '/') {
+      log_warn("The log-file in your configuration file is not an "
+               "absolute path");
+    } else {
+      // only set logpath if log_file is absolute
+      opt->logpath = ch;        // already strdup'd
+    }
+  });
+
+  OPT(use_ewmh_active_win, OPT_TBOOLEAN);
+  OPT(unredir_if_possible, OPT_TBOOLEAN);
+
+  PARSED(unredir_if_possible_delay, OPT_TINTEGER, {
+    long delay = (long)ch;
+    if (delay > 0) {
+      opt->unredir_if_possible_delay = delay;
+    } else if (delay < 0) {
+      log_error("Invalid value for unredir_if_possible_delay");
+    }
+  });
+
+  OPT(dbus, OPT_TBOOLEAN);
+
+  OPT(detect_transient, OPT_TBOOLEAN);
+  OPT(detect_client_leader, OPT_TBOOLEAN);
+  OPT(no_ewmh_fullscreen, OPT_TBOOLEAN);
+  OPT(transparent_clipping, OPT_TBOOLEAN);
+  OPT(dithered_present, OPT_TBOOLEAN);
+  OPT(glx_no_stencil, OPT_TBOOLEAN);
+  OPT(glx_no_rebind_pixmap, OPT_TBOOLEAN);
+  OPT(xrender_sync_fence, OPT_TBOOLEAN);
+  OPT(force_win_blend, OPT_TBOOLEAN);
+  OPT(resize_damage, OPT_TINTEGER);
+  OPT(use_damage, OPT_TBOOLEAN);
+
+  PARSED(write_pid_path, OPT_TSTRING, {
+    if (*((char *)ch) == '/') {
+      opt->write_pid_path = (char *)ch;
+    } else {
+      log_warn("The write-pid-path in your configuration file is not"
+               " an absolute path");
+    }
+  });
+
+  // dimming and fading
+  OPT(inactive_dim_fixed, OPT_TBOOLEAN);
 
   // animations
   OPT(animations, OPT_TBOOLEAN);
@@ -1126,58 +1193,11 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
   OPT(animation_window_mass, OPT_TDOUBLE);
   OPT(animation_dampening, OPT_TDOUBLE);
 
-  char *animation_for_open_window = NULL;
-  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_open_window", true,
-                                   &animation_for_open_window) &&
-      animation_for_open_window != NULL) {
-
-    opt->animation_for_open_window = parse_open_window_animation(animation_for_open_window);
-    if (opt->animation_for_open_window == OPEN_WINDOW_ANIMATION_INVALID) {
-      return false;
-    }
-  }
-
-  char *animation_for_unmap_window = NULL;
-  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_unmap_window", true,
-                                   &animation_for_unmap_window) &&
-      animation_for_unmap_window != NULL) {
-
-    opt->animation_for_unmap_window = parse_open_window_animation(animation_for_unmap_window);
-    if (opt->animation_for_unmap_window == OPEN_WINDOW_ANIMATION_INVALID) {
-      return false;
-    }
-  }
-
-  char *animation_for_transient_window = NULL;
-  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_transient_window", true,
-                                   &animation_for_transient_window) &&
-      animation_for_transient_window != NULL) {
-    opt->animation_for_transient_window =
-        parse_open_window_animation(animation_for_transient_window);
-    if (opt->animation_for_transient_window == OPEN_WINDOW_ANIMATION_INVALID) {
-      return false;
-    }
-  }
-
-  char *animation_for_next_tag = NULL;
-  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_next_tag", true,
-                                   &animation_for_next_tag) &&
-      animation_for_next_tag != NULL) {
-    opt->animation_for_next_tag = parse_open_window_animation(animation_for_next_tag);
-    if (opt->animation_for_next_tag == OPEN_WINDOW_ANIMATION_INVALID) {
-      return false;
-    }
-  }
-
-  char *animation_for_prev_tag = NULL;
-  if (pilua_check_primitive_option(L, OPT_TSTRING, "animation_for_prev_tag", true,
-                                   &animation_for_prev_tag) &&
-      animation_for_prev_tag != NULL) {
-    opt->animation_for_prev_tag = parse_open_window_animation(animation_for_prev_tag);
-    if (opt->animation_for_prev_tag == OPEN_WINDOW_ANIMATION_INVALID) {
-      return false;
-    }
-  }
+  ANIM(animation_for_open_window);
+  ANIM(animation_for_unmap_window);
+  ANIM(animation_for_transient_window);
+  ANIM(animation_for_next_tag);
+  ANIM(animation_for_prev_tag);
 
   OPT(enable_fading_next_tag, OPT_TBOOLEAN);
   OPT(enable_fading_prev_tag, OPT_TBOOLEAN);
@@ -1189,6 +1209,7 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
   OPT(frame_opacity, OPT_TDOUBLE);
   OPT(detect_client_opacity, OPT_TBOOLEAN);
 
+  // corners and borders
   OPT(corner_radius, OPT_TINTEGER);
   OPT(detect_rounded_corners, OPT_TBOOLEAN);
 
@@ -1200,23 +1221,30 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
   OPT(blur_background_fixed, OPT_TBOOLEAN);
   // OPT(blur_background_blacklist, LUA_TSTRING);
 
-  char *blur_method = NULL;
-  if (pilua_check_primitive_option(L, OPT_TSTRING, "blur_method", true, &blur_method) &&
-      blur_method != NULL) {
-    opt->blur_method = parse_blur_method(blur_method);
-    if (opt->blur_method == BLUR_METHOD_INVALID) {
+  PARSED(blur_kern, OPT_TSTRING, {
+    opt->blur_kerns =
+        parse_blur_kern_lst((char *)ch, &result->kernel_hasneg, &opt->blur_kernel_count);
+    if (!opt->blur_kerns) {
+      log_fatal("Failed to parse \"blur-kern\"");
       return false;
     }
-  }
+  });
 
-  // opt->corner_radius = 12;
-  // printf("corner_radius: %f\n", (double)opt->corner_radius);
+  PARSED(blur_method, OPT_TSTRING, {
+    opt->blur_method = parse_blur_method((char *)ch);
+    if (opt->blur_method == BLUR_METHOD_INVALID) {
+      log_fatal("Invalid blur method: %s", (char *)ch);
+      return false;
+    }
+  });
 
   // defaults for now
   result->fading_enable = true;
   result->shadow_enable = true;
 
   parse_debug_options(&opt->debug_options);
+#undef ANIM
+#undef PARSED
 #undef OPT
 #undef REQ
   return true;
