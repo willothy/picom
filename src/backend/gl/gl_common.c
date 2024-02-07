@@ -642,7 +642,7 @@ void gl_resize(struct gl_data *gd, int width, int height) {
 /// Fill a given region in bound framebuffer.
 /// @param[in] y_inverted whether the y coordinates in `clip` should be inverted
 static void _gl_fill(backend_t *base, struct color c, const region_t *clip, GLuint target,
-                     int height, bool y_inverted) {
+                     int height, bool y_inverted, const char *callee) {
   static const GLuint fill_vert_in_coord_loc = 0;
   int nrects;
   const rect_t *rect = pixman_region32_rectangles((region_t *)clip, &nrects);
@@ -688,6 +688,10 @@ static void _gl_fill(backend_t *base, struct color c, const region_t *clip, GLui
                         (void *)0);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target);
   glDrawElements(GL_TRIANGLES, nrects * 6, GL_UNSIGNED_INT, NULL);
+  gl_check_err_(callee, __LINE__);
+  // FIXME: Error (GL_INVALID_FRAMEBUFFER_OPERATION) happens sometime before here (traced
+  // back to line 742)
+  // gl_clear_err();
 
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -705,7 +709,7 @@ static void _gl_fill(backend_t *base, struct color c, const region_t *clip, GLui
 
 void gl_fill(backend_t *base, struct color c, const region_t *clip) {
   auto gd = (struct gl_data *)base;
-  return _gl_fill(base, c, clip, gd->back_fbo, gd->height, true);
+  return _gl_fill(base, c, clip, gd->back_fbo, gd->height, true, __func__);
 }
 
 void *gl_make_mask(backend_t *base, geometry_t size, const region_t *reg) {
@@ -728,14 +732,41 @@ void *gl_make_mask(backend_t *base, geometry_t size, const region_t *reg) {
 
   GLuint fbo;
   glBlendFunc(GL_ONE, GL_ZERO);
-  glGenFramebuffers(1, &fbo);
+  glCreateFramebuffers(1, &fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                          tex->texture, 0);
   glDrawBuffer(GL_COLOR_ATTACHMENT0);
   glClearColor(0, 0, 0, 1);
-  glClear(GL_COLOR_BUFFER_BIT);
-  _gl_fill(base, (struct color){1, 1, 1, 1}, reg, fbo, size.height, false);
+  GLenum stat = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+  if (stat == GL_FRAMEBUFFER_COMPLETE) {
+    glClear(GL_COLOR_BUFFER_BIT);
+    // gl_check_err();
+    // FIXME: error (GL_INVALID_FRAMEBUFFER_OPERATION) happens sometime before here
+    _gl_fill(base, (struct color){1, 1, 1, 1}, reg, fbo, size.height, false, __func__);
+  } else {
+    char *stat_str = "Unknown";
+    switch (stat) {
+    case GL_FRAMEBUFFER_UNDEFINED: {
+      stat_str = "GL_FRAMEBUFFER_UNDEFINED";
+      break;
+    }
+    case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: {
+      stat_str = "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+      break;
+    }
+    case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: {
+      stat_str = "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+      break;
+    }
+    case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: {
+      stat_str = "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
+      break;
+    }
+    default: break;
+    }
+    log_error("Failed to create a framebuffer for mask, status %s", stat_str);
+  }
   glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   glDeleteFramebuffers(1, &fbo);
@@ -1108,7 +1139,8 @@ static void gl_image_apply_alpha(backend_t *base, struct backend_image *img,
   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
                          inner->texture, 0);
   glDrawBuffer(GL_COLOR_ATTACHMENT0);
-  _gl_fill(base, (struct color){0, 0, 0, 0}, reg_op, fbo, inner->height, !inner->y_inverted);
+  _gl_fill(base, (struct color){0, 0, 0, 0}, reg_op, fbo, inner->height,
+           !inner->y_inverted, __func__);
   glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
   glDeleteFramebuffers(1, &fbo);
