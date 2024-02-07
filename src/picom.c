@@ -2348,6 +2348,7 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
 
   // Parse configuration file
   config_result_t config_res = {
+      .file_path = NULL,
       .fading_enable = true,
       .shadow_enable = true,
       .kernel_hasneg = false,
@@ -2583,13 +2584,13 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
   }
 
   if (ps->o.print_diagnostics) {
-    print_diagnostics(ps, config_file, compositor_running);
+    print_diagnostics(ps, config_res.file_path, compositor_running);
     exit(0);
   }
 
   ps->file_watch_handle = file_watch_init(ps->loop);
-  if (ps->file_watch_handle && config_file) {
-    file_watch_add(ps->file_watch_handle, config_file, config_file_change_cb, ps);
+  if (ps->file_watch_handle && config_res.file_path) {
+    file_watch_add(ps->file_watch_handle, config_res.file_path, config_file_change_cb, ps);
   }
 
   if (bkend_use_glx(ps) && ps->o.legacy_backends) {
@@ -3068,7 +3069,9 @@ int main(int argc, char **argv) {
     }
   } while (!quit);
 
+  lua_close(L);
   free(config_file);
+
   if (pid_file) {
     log_trace("remove pid file %s", pid_file);
     unlink(pid_file);

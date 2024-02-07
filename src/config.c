@@ -26,6 +26,7 @@
 #include "kernel.h"
 #include "lauxlib.h"
 #include "log.h"
+#include "lua.h"
 #include "region.h"
 #include "string_utils.h"
 #include "types.h"
@@ -890,6 +891,74 @@ bool pilua_check(lua_State *L, int rv, char **msg) {
   return false;
 }
 
+typedef enum {
+  OPT_TBOOLEAN,
+  OPT_TINTEGER,
+  OPT_TDOUBLE,
+  OPT_TSTRING,
+} OptValueType;
+
+/*
+ * Check if the given option is of the given type, and if so, get its
+ * value. The option must be a boolean, number or string.
+ *
+ * @param L the Lua state
+ * @param type the type to check for
+ * @param name the name of the option
+ * @param[out] out return the value of the option
+ */
+bool pilua_check_primitive_option(lua_State *L, OptValueType type, const char *name,
+                                  bool optional, void *out) {
+  int l_ty = LUA_TNIL;
+  switch (type) {
+  case OPT_TBOOLEAN: {
+    l_ty = LUA_TBOOLEAN;
+    break;
+  }
+  case OPT_TINTEGER:
+  case OPT_TDOUBLE: {
+    l_ty = LUA_TNUMBER;
+    break;
+  }
+  case OPT_TSTRING: {
+    l_ty = LUA_TSTRING;
+    break;
+  }
+  default: unreachable();
+  }
+  lua_getglobal(L, name);
+  int found = lua_type(L, -1);
+  if (found != l_ty) {
+    if (optional && found == LUA_TNIL) {
+      return true;
+    }
+    log_error("Invalid type for option %s", name);
+    return false;
+  }
+  switch (type) {
+  case OPT_TBOOLEAN: {
+    *((bool *)out) = lua_toboolean(L, -1);
+    break;
+  }
+  case OPT_TDOUBLE: {
+    *((double *)out) = lua_tonumber(L, -1);
+    break;
+  }
+  case OPT_TINTEGER: {
+    *((long *)out) = lua_tointeger(L, -1);
+    break;
+  }
+  case OPT_TSTRING: {
+    *(char **)out = strdup(lua_tostring(L, -1));
+    break;
+  }
+  default: {
+    return false;
+  }
+  }
+  return true;
+}
+
 bool parse_config(options_t *opt, const char *config, config_result_t *result) {
   // clang-format off
 	*opt = (struct options){
@@ -1011,6 +1080,8 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
 
   if (!config_path) {
     log_error("Failed to locate config file");
+    // Fall back to defaults if no config file is found.
+    // Fail gracefully since no error occurred.
     return true;
   }
 
@@ -1022,14 +1093,74 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
     return false;
   }
 
-  free(config_path);
+  // if (!lua_istable(L, -1)) {
+  //   log_error("Config file must return a table");
+  //   free(config_path);
+  //   return true;
+  // }
+
+  result->file_path = config_path;
+
+  lua_getglobal(L, "backend");
+  char *backend = NULL;
+  if (pilua_check_primitive_option(L, OPT_TSTRING, "backend", true, &backend) &&
+      backend != NULL) {
+    opt->backend = parse_backend(backend);
+    if (opt->backend == NUM_BKEND) {
+      return false;
+    }
+  }
+
+#define OPT(name, type) (pilua_check_primitive_option(L, type, #name, true, &opt->name))
+#define REQ(name, type) (pilua_check_primitive_option(L, type, #name, false, &opt->name))
+
+  // animations
+  OPT(animations, OPT_TBOOLEAN);
+  OPT(animation_clamping, OPT_TBOOLEAN);
+  OPT(animation_stiffness, OPT_TDOUBLE);
+  OPT(animation_stiffness_tag_change, OPT_TDOUBLE);
+  OPT(animation_window_mass, OPT_TDOUBLE);
+  OPT(animation_dampening, OPT_TDOUBLE);
+
+  // opacity
+  OPT(inactive_opacity, OPT_TDOUBLE);
+  OPT(inactive_opacity_override, OPT_TBOOLEAN);
+  OPT(active_opacity, OPT_TDOUBLE);
+  OPT(frame_opacity, OPT_TDOUBLE);
+  OPT(detect_client_opacity, OPT_TBOOLEAN);
+
+  OPT(corner_radius, OPT_TINTEGER);
+  OPT(detect_rounded_corners, OPT_TBOOLEAN);
+
+  // blur
+  OPT(blur_strength, OPT_TDOUBLE);
+  OPT(blur_radius, OPT_TDOUBLE);
+  OPT(blur_deviation, OPT_TDOUBLE);
+  OPT(blur_background_frame, OPT_TBOOLEAN);
+  OPT(blur_background_fixed, OPT_TBOOLEAN);
+  // OPT(blur_background_blacklist, LUA_TSTRING);
+
+  char *blur_method = NULL;
+  if (pilua_check_primitive_option(L, OPT_TSTRING, "blur_method", true, &blur_method) &&
+      blur_method != NULL) {
+    opt->blur_method = parse_blur_method(blur_method);
+    if (opt->blur_method == BLUR_METHOD_INVALID) {
+      return false;
+    }
+  }
+
+  // opt->corner_radius = 12;
+  // printf("corner_radius: %f\n", (double)opt->corner_radius);
 
   // defaults for now
   result->fading_enable = true;
   result->shadow_enable = true;
-
-  // parse_config_libconfig(opt, config, shadows, fading, hasneg, winopt_mask);
+  // parse_config_libconfig(&{0}, config, &result->shadow_enable, &result->fading_enable,
+  //                        &result->kernel_hasneg, (win_option_mask_t
+  //                        *)&result->winopt_mask);
 
   parse_debug_options(&opt->debug_options);
+#undef OPT
+#undef REQ
   return true;
 }

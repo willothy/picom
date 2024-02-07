@@ -383,6 +383,7 @@ typedef struct {
   bool shadow_enable;
   bool fading_enable;
   bool kernel_hasneg;
+  char *file_path;
   win_option_mask_t winopt_mask[NUM_WINTYPES];
 } config_result_t;
 
