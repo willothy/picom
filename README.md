@@ -22,6 +22,7 @@ Changes that I am working on:
 
 - Expand Lua configuration to include blacklists
 - Expand Lua configuration to include wintype rules
+- Remove dependency on `libconfig`
 
 Changes I am considering / planning:
 
@@ -36,18 +37,9 @@ Changes I am considering / planning:
 - Moving to either Cmake or the Zig build system (unlikely, I hate messing with C build systems)
 - Porting some of this to Zig, Go or Rust (if I have time, this could be fun - probably would use Rust)
 
-> Willothy: Everything below this point was written by prior contributors
-> and may be outdated or completely innacurate since the switch to Lua.
-
-__picom__ is a compositor for X, and a [fork of Compton](History.md).
+__picom__ is a compositor for X, which is a [fork of Compton](History.md).
 
 **This is a development branch, bugs to be expected**
-
-You can leave your feedback or thoughts in the [discussion tab](https://github.com/yshui/picom/discussions), or chat with other users on [discord](https://discord.gg/SY5JJzPgME)!
-
-## Change Log
-
-See [Releases](https://github.com/yshui/picom/releases)
 
 ## Build
 
@@ -55,6 +47,7 @@ See [Releases](https://github.com/yshui/picom/releases)
 
 Assuming you already have all the usual building tools installed (e.g. gcc, python, meson, ninja, etc.), you still need:
 
+- luajit
 - libx11
 - libx11-xcb
 - libXext
@@ -120,11 +113,6 @@ ninja -C build
 
 ### To install
 
-#### AUR (arch)
-
-- picom-ftlabs-git
-Thanks to @Fxzzi for maintaining the package.
-
 ``` bash
 ninja -C build install
 ```
@@ -134,9 +122,16 @@ Default install prefix is `/usr/local`, you can change it with `meson configure 
 ## Running
 
 To launch with all animations as a background process you can use:
-`picom --animations -b`
+`picom -b`
 
 To only have specific animations, enable them with cli flags (see `picom --help`) or add them to your picom config.
+
+## Configuration
+
+Your `picom` (`luacomp`?) config lives in `~/.config/picom.lua` or `~/.config/picom/picom.lua`.
+
+Config docs todo, but the keys are pretty much the same as they were in the `.conf` but with
+underscores instead of dashes. Rules, wintypes and blacklists are not yet supported.
 
 ## How to Contribute
 
@@ -144,17 +139,14 @@ All contributions are welcome!
 
 New features you think should be included in picom, a fix for a bug you found - please open a PR!
 
-You can take a look at the [Issues](https://github.com/yshui/picom/issues).
+You can take a look at the [Issues](https://github.com/willothy/picom/issues).
 
 Contributions to the documents and wiki are also appreciated.
 
 Even if you don't want to add anything to picom, you are still helping by compiling and running this branch, and report any issue you can find.
 
-### Become a Collaborator
-
-Becoming a collaborator of picom requires significant time commitment. You are expected to reply to issue reports, reviewing PRs, and sometimes fix bugs or implement new feature. You won't be able to push to the main branch directly, and all you code still has to go through code review.
-
-If this sounds good to you, feel free to contact me.
+As I mention at the top of the readme, I am not making any guarantees of stability or long-term maintenance of this fork. This means that I may not
+get around to fixing issues quickly if I'm not actively experiencing them. However, PRs fixing issues are welcome!
 
 ## Contributors
 
