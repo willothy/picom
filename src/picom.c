@@ -45,6 +45,7 @@
 #include "err.h"
 #include "kernel.h"
 #include "picom.h"
+#include "pixman.h"
 #ifdef CONFIG_OPENGL
 #include "opengl.h"
 #endif
@@ -1033,22 +1034,23 @@ paint_preprocess(session_t *ps, bool *fade_running, bool *animation_running) {
       }
 
       // Submit window size change
-      if (size_changed) {
+      if (size_changed && w->state != WSTATE_DESTROYING && w->state != WSTATE_UNMAPPING &&
+          w->state != WSTATE_UNMAPPED) {
         win_on_win_size_change(ps, w);
 
-        win_update_bounding_shape(ps, w);
+        pixman_region32_clear(&w->bounding_shape);
+        pixman_region32_fini(&w->bounding_shape);
+        pixman_region32_init_rect(&w->bounding_shape, 0, 0, (uint)w->widthb, (uint)w->heightb);
+        // win_update_bounding_shape(ps, w);
 
-        if (w->state != WSTATE_DESTROYING) {
-          win_clear_flags(w, WIN_FLAGS_PIXMAP_STALE);
-        }
+        win_clear_flags(w, WIN_FLAGS_PIXMAP_STALE);
 
         win_process_image_flags(ps, w);
-      }
-
-      // Mark new window region with damage
-      if (was_painted && geometry_changed) {
-        add_damage_from_win(ps, w);
-        w->reg_ignore_valid = false;
+        // Mark new window region with damage
+        if (was_painted && geometry_changed) {
+          add_damage_from_win(ps, w);
+          w->reg_ignore_valid = false;
+        }
       }
 
       // We can't check for 1 here as sometimes 1 = 0.999999999999999

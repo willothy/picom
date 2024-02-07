@@ -115,8 +115,8 @@ struct managed_win {
   /// backend data attached to this window. Only available when
   /// `state` is not UNMAPPED
   void *win_image;
-  void *old_win_image;        // Old window image for interpolating window contents during
-                              // animations
+  void *old_win_image;        // Old window image for interpolating window contents
+                              // during animations
   void *shadow_image;
   void *mask_image;
   /// Pointer to the next higher window to paint.

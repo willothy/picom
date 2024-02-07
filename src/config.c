@@ -1102,6 +1102,9 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
 
   result->file_path = config_path;
 
+  parse_config_libconfig(opt, config, &result->shadow_enable, &result->fading_enable,
+                         &result->kernel_hasneg, (win_option_mask_t *)&result->winopt_mask);
+
   lua_getglobal(L, "backend");
   char *backend = NULL;
   if (pilua_check_primitive_option(L, OPT_TSTRING, "backend", true, &backend) &&
@@ -1212,9 +1215,6 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
   // defaults for now
   result->fading_enable = true;
   result->shadow_enable = true;
-  // parse_config_libconfig(opt, config, &result->shadow_enable, &result->fading_enable,
-  //                        &result->kernel_hasneg, (win_option_mask_t
-  //                        *)&result->winopt_mask);
 
   parse_debug_options(&opt->debug_options);
 #undef OPT

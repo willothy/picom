@@ -485,13 +485,11 @@ void init_animation(session_t *ps, struct managed_win *w) {
 
   animation = ps->o.animation_for_open_window;
 
-  // if (w->window_type != WINTYPE_TOOLTIP &&
-  //     wid_has_prop(ps, w->client_win, ps->atoms->aWM_TRANSIENT_FOR)) {
-  //   animation = ps->o.animation_for_transient_window;
-  // }
-
-  if (ps->o.wintype_option[w->window_type].animation != OPEN_WINDOW_ANIMATION_INVALID &&
-      !w->dwm_mask) {
+  if (w->window_type != WINTYPE_TOOLTIP &&
+      wid_has_prop(ps, w->client_win, ps->atoms->aWM_TRANSIENT_FOR)) {
+    animation = ps->o.animation_for_transient_window;
+  } else if (ps->o.wintype_option[w->window_type].animation != OPEN_WINDOW_ANIMATION_INVALID &&
+             !w->dwm_mask) {
     animation = ps->o.wintype_option[w->window_type].animation;
   }
 
@@ -1524,8 +1522,10 @@ void win_on_win_size_change(session_t *ps, struct managed_win *w) {
 
   // We don't handle property updates of non-visible windows until they are
   // mapped.
-  assert(w->state != WSTATE_UNMAPPED && w->state != WSTATE_DESTROYING &&
-         w->state != WSTATE_UNMAPPING);
+  if (w->state == WSTATE_UNMAPPED || w->state == WSTATE_DESTROYING ||
+      w->state == WSTATE_UNMAPPING) {
+    return;
+  }
 
   // Invalidate the shadow we built
   win_set_flags(w, WIN_FLAGS_IMAGES_STALE);
@@ -2208,8 +2208,10 @@ void win_update_bounding_shape(session_t *ps, struct managed_win *w) {
 
   // We don't handle property updates of non-visible windows until they are
   // mapped.
-  assert(w->state != WSTATE_UNMAPPED && w->state != WSTATE_DESTROYING &&
-         w->state != WSTATE_UNMAPPING);
+  if (w->state == WSTATE_UNMAPPED || w->state == WSTATE_DESTROYING ||
+      w->state == WSTATE_UNMAPPING) {
+    return;
+  }
 
   pixman_region32_clear(&w->bounding_shape);
   // Start with the window rectangular region
@@ -3036,11 +3038,21 @@ win_is_fullscreen_xcb(xcb_connection_t *c, const struct atom *a, const xcb_windo
   return false;
 }
 
+#include <execinfo.h>
+
 /// Set flags on a window. Some sanity checks are performed
 void win_set_flags(struct managed_win *w, uint64_t flags) {
   log_debug("Set flags %" PRIu64 " to window %#010x (%s)", flags, w->base.id, w->name);
   if (unlikely(w->state == WSTATE_DESTROYING)) {
-    log_error("Flags set on a destroyed window %#010x (%s)", w->base.id, w->name);
+
+    void *arr[3] = {0};
+    backtrace(arr, 3);
+    char **symbols = backtrace_symbols(arr, 3);
+    for (int i = 0; i < 3; i++) {
+      printf("%s\n", symbols[i]);
+    }
+    // 	printf("%p\n", arr[i]);
+    log_error("Flags set on a destroyed window %#010x (%s)", w->base.id, __func__);
     return;
   }
 
