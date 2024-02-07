@@ -1172,6 +1172,7 @@ bool parse_config(options_t *opt, const char *config, config_result_t *result) {
   OPT(force_win_blend, OPT_TBOOLEAN);
   OPT(resize_damage, OPT_TINTEGER);
   OPT(use_damage, OPT_TBOOLEAN);
+  OPT(vsync, OPT_TBOOLEAN);
 
   PARSED(write_pid_path, OPT_TSTRING, {
     if (*((char *)ch) == '/') {
