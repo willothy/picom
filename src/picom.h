@@ -25,7 +25,6 @@
 #include "win.h"
 #include "x.h"
 
-// #include <luaconf.h>
 #include <lauxlib.h>
 #include <lua.h>
 #include <luajit.h>
@@ -39,6 +38,9 @@ enum root_flags {
 
 // == Functions ==
 // TODO(yshui) move static inline functions that are only used in picom.c, into picom.c
+
+// The main entry point for picom.
+int picom_run(int argc, char **argv);
 
 // Retrieve a handle to the global Lua state.
 lua_State *get_lua_state();

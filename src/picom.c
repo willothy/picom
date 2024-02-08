@@ -2955,7 +2955,7 @@ static void session_run(session_t *ps) {
 /**
  * The function that everybody knows.
  */
-int main(int argc, char **argv) {
+int picom_run(int argc, char **argv) {
   // Set locale so window names with special characters are interpreted
   // correctly
   setlocale(LC_ALL, "");
@@ -3089,3 +3089,9 @@ int main(int argc, char **argv) {
 
   return ret_code;
 }
+
+#ifndef PICOM_NO_MAIN
+int main(int argc, char **argv) {
+  return picom_run(argc, argv);
+}
+#endif

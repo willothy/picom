@@ -582,7 +582,7 @@ static inline void ev_property_notify(session_t *ps, xcb_property_notify_event_t
       w = find_toplevel(ps, ev->window);
     }
     if (w) {
-      log_info("%d: %s\n", w->base.id, state_names[w->state]);
+        log_info("%d: %s\n", w->base.id, state_names[w->state]);
       uint32_t mask = w->dwm_mask;
       if (w->state == WSTATE_MAPPED) {
         w->dwm_mask = ANIM_UNMAP;

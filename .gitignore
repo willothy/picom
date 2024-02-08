@@ -58,3 +58,8 @@ doxygen/
 *.orig
 /tests/log
 /tests/testcases/__pycache__/
+
+
+# Added by cargo
+
+/target
