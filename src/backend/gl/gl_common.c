@@ -882,13 +882,19 @@ bool gl_init(struct gl_data *gd, session_t *ps) {
   glUseProgram(0);
 
   gd->dithered_present = ps->o.dithered_present;
+  const char *dummy_vert_arr[] = {present_vertex_shader, NULL};
+  const char *dummy_frag_arr[] = {dummy_frag, NULL};
+  gd->dummy_prog = gl_create_program_from_strv(dummy_vert_arr, dummy_frag_arr);
+  if (!gd->dummy_prog) {
+    log_error("Failed to create the dummy shader");
+    return false;
+  }
   if (gd->dithered_present) {
     gd->present_prog =
         gl_create_program_from_strv((const char *[]){present_vertex_shader, NULL},
                                     (const char *[]){present_frag, dither_glsl, NULL});
   } else {
-    gd->present_prog = gl_create_program_from_strv(
-        (const char *[]){present_vertex_shader, NULL}, (const char *[]){dummy_frag, NULL});
+    gd->present_prog = gd->dummy_prog;
   }
   if (!gd->present_prog) {
     log_error("Failed to create the present shader");
@@ -908,8 +914,8 @@ bool gl_init(struct gl_data *gd, session_t *ps) {
   glUseProgram(gd->shadow_shader.prog);
   glUniform1i(glGetUniformLocationChecked(gd->shadow_shader.prog, "tex"), 0);
   glUniformMatrix4fv(pml, 1, false, projection_matrix[0]);
-  glUseProgram(0);
   glBindFragDataLocation(gd->shadow_shader.prog, 0, "out_color");
+  glUseProgram(0);
 
   gd->brightness_shader.prog =
       gl_create_program_from_str(interpolating_vert, interpolating_frag);
@@ -1020,8 +1026,11 @@ static inline void gl_image_decouple(backend_t *base, struct backend_image *img)
                GL_UNSIGNED_BYTE, NULL);
   glBindTexture(GL_TEXTURE_2D, 0);
 
-  assert(gd->present_prog);
-  glUseProgram(gd->present_prog);
+  if (gd->present_prog) {
+    glUseProgram(gd->present_prog);
+  } else {
+    glUseProgram(gd->dummy_prog);
+  }
   glBindTexture(GL_TEXTURE_2D, inner->texture);
 
   GLuint fbo;

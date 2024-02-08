@@ -2430,6 +2430,7 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
         c2_list_postprocess(ps, ps->o.opacity_rules) &&
         c2_list_postprocess(ps, ps->o.rounded_corners_blacklist) &&
         c2_list_postprocess(ps, ps->o.focus_blacklist) &&
+        c2_list_postprocess(ps, ps->o.corner_radius_rules) &&
         c2_list_postprocess(ps, ps->o.animation_blacklist))) {
     log_error("Post-processing of conditionals failed, some of your rules "
               "might not work");
@@ -2809,6 +2810,7 @@ static void session_destroy(session_t *ps) {
   c2_list_free(&ps->o.paint_blacklist, NULL);
   c2_list_free(&ps->o.unredir_if_possible_blacklist, NULL);
   c2_list_free(&ps->o.rounded_corners_blacklist, NULL);
+  c2_list_free(&ps->o.corner_radius_rules, NULL);
   c2_list_free(&ps->o.window_shader_fg_rules, free);
 
   // Free tracked atom list
